@@ -57,6 +57,10 @@ sed -e "s/HOST_BUNDLE_ID/$(plutil -extract CFBundleIdentifier raw -o - "$HOST_PL
     "$ROOT/extension/LiveActivity/Info.plist" > "$APPEX/Info.plist"
 plutil -convert binary1 "$APPEX/Info.plist"
 
+# A tiny, local portrait for the expanded Dynamic Island. Never download an asset at runtime.
+# Kept out of ActivityKit's JSON state to preserve the live artwork and lyric size limit.
+install -m 0644 "$ROOT/extension/LiveActivity/yanbi-avatar.jpg" "$APPEX/yanbi-avatar.jpg"
+
 # The taps', the shortcuts' and the controls' intents run inside Spotify, so Spotify's metadata has to
 # name them too, under the module the tweak compiles them in (Theos names it after the tweak instance).
 metadata spotifyglass 16.0 "$OUT/app" "$SHARED" "$SHORTCUTS"
