@@ -73,7 +73,7 @@ static NSArray<NSString *> *backgroundNotes(void) {
     self.userInteractionEnabled = NO;
     self.isAccessibilityElement = YES;
     self.accessibilityTraits = UIAccessibilityTraitImage;
-    self.accessibilityLabel = @"Player preview";
+    self.accessibilityLabel = @"Xem trước trình phát";
 
     _field = [[SGRArtworkField alloc] initWithFrame:frame];
     _field.showsBackdrop = YES;
@@ -148,7 +148,7 @@ static NSArray<NSString *> *backgroundNotes(void) {
 - (void)reloadTrack {
     SPTPlayerState *state = SGPlayerState();
     SGShownTrack *shown = SGShownTrackNow();
-    _title.text = shown.title ?: @"Not Playing";
+    _title.text = shown.title ?: @"Chưa phát nhạc";
     _artist.text = shown.artist ?: @"";
     _position = shown.current && state.duration > 0 ? MIN(1, MAX(0, state.position / state.duration)) : 0;
     // The clip covers the field, and the hills move over it, which then holds still, as in the player.
@@ -326,9 +326,9 @@ static SGModRow *fluidSlider(NSString *title, SGRFluidSetting setting, NSString 
 }
 
 SGModRow *SGRLyricsHideRow(void) {
-    SGModRow *row = SGChoiceRow(@"Hide the controls", @"A few seconds after the last touch, the lyrics take the room",
-                                SGRKeyLyricsAutoHide, @[@"Off", @"Everything", @"Keep the title"], SGRLyricsHideMode());
-    row.choiceNotes = @[@"The controls stay", @"The lyrics take the whole player", @"The cover, the title and the top row stay; in landscape, the title"];
+    SGModRow *row = SGChoiceRow(@"Ẩn bảng điều khiển", @"A few seconds after the last touch, the lyrics take the room",
+                                SGRKeyLyricsAutoHide, @[@"Off", @"Tất cả", @"Giữ tên bài hát"], SGRLyricsHideMode());
+    row.choiceNotes = @[@"Giữ các nút điều khiển", @"Lời nhạc chiếm toàn bộ trình phát", @"The cover, the title and the top row stay; in landscape, the title"];
     return row;
 }
 
@@ -336,23 +336,23 @@ UIViewController *SGRPlayerSettingsPage(NSArray *more) {
     SGRPlayerShowcase *showcase = [[SGRPlayerShowcase alloc] initWithFrame:CGRectMake(0, 0, 320, kCardMinHeight)];
     UISegmentedControl *backgrounds = [[UISegmentedControl alloc] initWithItems:SGRPlayerBackgroundNames()];
     backgrounds.selectedSegmentIndex = SGRPlayerBackground();
-    backgrounds.accessibilityLabel = @"Background";
+    backgrounds.accessibilityLabel = @"Nền";
     backgrounds.apportionsSegmentWidthsByContent = YES;
 
-    SGModRow *lowData = SGOptionRow(@"Download in Low Data Mode", @"Up to about 7 MB a song", SGKeyMotionLowData);
+    SGModRow *lowData = SGOptionRow(@"Tải ở chế độ tiết kiệm dữ liệu", @"Tối đa khoảng 7 MB mỗi bài", SGKeyMotionLowData);
     lowData.visible = ^BOOL { return SGRPlayerBackground() == SGRPlayerBackgroundAnimated; };
     SGModRow *sources = SGMotionSourcesRow();
     sources.visible = lowData.visible;
 
     __block __weak UITableViewController *weakPage;
-    SGModRow *reset = SGActionRow(@"Reset", nil, ^{
+    SGModRow *reset = SGActionRow(@"Đặt lại", nil, ^{
         SGRResetFluidSettings();
         [weakPage.tableView reloadData];   // the sliders at once, rather than at the page's next tick
     });
     reset.color = SGRed();
     NSArray<SGModRow *> *fluid = @[
-        fluidSlider(@"Speed", SGRFluidSpeed, @"%"), fluidSlider(@"Warp", SGRFluidWarp, @"%"), fluidSlider(@"Blur", SGRFluidBlur, @""),
-        fluidSlider(@"Saturation", SGRFluidSaturation, @"%"), fluidSlider(@"Brightness", SGRFluidBrightness, @"%"), reset,
+        fluidSlider(@"Tốc độ", SGRFluidSpeed, @"%"), fluidSlider(@"Biến dạng", SGRFluidWarp, @"%"), fluidSlider(@"Độ mờ", SGRFluidBlur, @""),
+        fluidSlider(@"Độ bão hòa", SGRFluidSaturation, @"%"), fluidSlider(@"Độ sáng", SGRFluidBrightness, @"%"), reset,
     ];
     for (SGModRow *row in fluid) row.visible = ^BOOL { return SGRPlayerBackground() == SGRPlayerBackgroundFluid; };
 
@@ -360,19 +360,19 @@ UIViewController *SGRPlayerSettingsPage(NSArray *more) {
         SGSection(nil, @[sources, lowData]),
         SGNotedSection(nil, fluid, @"Brightness above 100% can make white text harder to read. A paused song holds the "
                                    @"background still. Animated and Visualizer use these where they show Fluid."),
-        SGNotedSection(@"Controls", @[SGSwitchRow(@"Volume", nil, SGRKeyPlayerVolume),
-                                      SGOptionRow(@"Follow the cover", nil, SGRKeyPlayerFollowsCover),
-                                      SGOptionRow(@"Spotify's icons", @"Lyrics, device, queue and the AI DJ's button", SGRKeyPlayerSpotifyIcons)],
+        SGNotedSection(@"Điều khiển", @[SGSwitchRow(@"Âm lượng", nil, SGRKeyPlayerVolume),
+                                      SGOptionRow(@"Theo màu ảnh bìa", nil, SGRKeyPlayerFollowsCover),
+                                      SGOptionRow(@"Biểu tượng Spotify", @"Lyrics, device, queue and the AI DJ's button", SGRKeyPlayerSpotifyIcons)],
                        @"Volume puts a slider under the controls for this iPhone, or the speaker's while Spotify plays on another device. "
                        @"Follow the cover paints the like, shuffle, repeat, device and queue buttons, and the mini player's device and like, in the color of the song playing. "
                        @"Spotify's icons keeps Spotify's own glyphs in the row under the controls instead of the Music app's."),
-        SGNotedSection(@"Mini player", SGRNowPlayingBarRows(),
+        SGNotedSection(@"Trình phát mini", SGRNowPlayingBarRows(),
                        @"Apple Music style moves the now playing bar in between two tabs as you scroll down."), nil];
     [sections addObjectsFromArray:more];
     // Fluid, Animated and Visualizer share the field (PlayerMotion.x reads the choice on every track, PlayerVisualiser.m
     // on the field's layout); Still and Colors are a field of another kind, made once a launch (PlayerField.x).
     NSString *footer = @"Fluid, Animated and Visualizer change with the next song. Still, Colors, Hide on the player and Spotify's icons apply after you restart Spotify.";
-    SGRPlayerPage *page = [[SGRPlayerPage alloc] initWithTitle:@"Player" intro:nil sections:sections footer:footer];
+    SGRPlayerPage *page = [[SGRPlayerPage alloc] initWithTitle:@"Trình phát" intro:nil sections:sections footer:footer];
     weakPage = page;
     page.showcase = showcase;
     page.backgrounds = backgrounds;
