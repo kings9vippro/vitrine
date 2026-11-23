@@ -12,12 +12,12 @@ UIViewController *SGAutoMixSettingsPage(void) {
     SGModRow *toggle = SGOptionRow(@"AutoMix", nil, SGKeyAutoMix);
     toggle.changed = ^(BOOL on) { SGAutoMixApply(on); };
 
-    NSArray<NSString *> *styles = @[@"Beat-matched", @"Crossfade"];
-    SGModRow *style = SGMenuRow(@"Style", styles, ^NSString *{ return styles[(NSUInteger)SGAutoMixCurrentStyle()]; },
+    NSArray<NSString *> *styles = @[@"Khớp nhịp", @"Chuyển bài mượt"];
+    SGModRow *style = SGMenuRow(@"Kiểu chuyển bài", styles, ^NSString *{ return styles[(NSUInteger)SGAutoMixCurrentStyle()]; },
                                 ^(NSInteger index) { SGAutoMixSetStyle(index); });
     style.waitsOn = SGKeyAutoMix;
 
-    SGModRow *blend = SGSliderRow(@"Blend length", nil, kShortest, kLongest, 1,
+    SGModRow *blend = SGSliderRow(@"Thời gian hòa trộn", nil, kShortest, kLongest, 1,
         ^double {
             SGTransitionSettings s;
             return SGTransitionSettingsRead(&s) ? MAX(kShortest, MIN(kLongest, s.milliseconds / 1000.0)) : 5;
@@ -26,7 +26,7 @@ UIViewController *SGAutoMixSettingsPage(void) {
         ^NSString *(double value) { return [NSString stringWithFormat:@"%ld s", lround(value)]; });
     blend.waitsOn = SGKeyAutoMix;
 
-    NSString *note = SGAutoMixAccountAllows() ? nil : @"AutoMix needs Premium, or Spoof Premium under Premium, ads & privacy.";
+    NSString *note = SGAutoMixAccountAllows() ? nil : @"AutoMix cần Premium hoặc tùy chọn Premium mô phỏng trong mục Premium, quảng cáo và riêng tư.";
     return [[SGModPage alloc] initWithTitle:@"AutoMix" intro:nil sections:@[
         SGNotedSection(nil, @[toggle, style, blend], note),
     ] footer:nil];
