@@ -39,42 +39,6 @@
 #import "YanbiMiniIsland.h"
 
 static const CGFloat kRowHeight = 56;
-static NSString *const SGKeyYanbiMiniIsland = @"spotifyglass.vitrine.miniIsland";
-
-// This is an in-app mini-player on older notch iPhones, not a system Dynamic Island.
-// Its size is part of the table header, so it never overlaps the status bar or camera cutout.
-@interface SGVitrineSettingsPage : SGModPage
-- (void)refreshMiniIsland;
-@end
-
-@implementation SGVitrineSettingsPage
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    [self refreshMiniIsland];
-}
-- (void)refreshMiniIsland {
-    SGYanbiMiniIslandView *old = (SGYanbiMiniIslandView *)self.tableView.tableHeaderView;
-    BOOL enabled = SGFlag(SGKeyYanbiMiniIsland, YES);
-    if (!enabled) {
-        if ([old isKindOfClass:SGYanbiMiniIslandView.class]) [old setActive:NO];
-        self.tableView.tableHeaderView = nil;
-        return;
-    }
-    if ([old isKindOfClass:SGYanbiMiniIslandView.class]) return;
-    SGYanbiMiniIslandView *island = [[SGYanbiMiniIslandView alloc] initWithFrame:CGRectMake(0, 0, self.tableView.bounds.size.width, 90)];
-    island.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-    self.tableView.tableHeaderView = island;
-    [island setActive:self.view.window != nil];
-}
-- (void)viewDidAppear:(BOOL)animated {
-    [super viewDidAppear:animated];
-    [(SGYanbiMiniIslandView *)self.tableView.tableHeaderView setActive:YES];
-}
-- (void)viewWillDisappear:(BOOL)animated {
-    [super viewWillDisappear:animated];
-    [(SGYanbiMiniIslandView *)self.tableView.tableHeaderView setActive:NO];
-}
-@end
 static char kRowKey, kInsetKey;
 
 // Each part of Spotify on a tile of its own color, as Settings lists its own, so a row is found by its color.
@@ -106,8 +70,9 @@ static UIViewController *modSettingsPage(void) {
     addonUpdate.visible = ^BOOL { return SGHapticAddonOutdated(); };
     [sections addObject:SGSection(nil, @[addonUpdate])];
 
-    SGModRow *miniIsland = SGSwitchRow(@"Đảo nhạc mini trong Vitrine",
-        @"Chỉ hiển thị trong Spotify trên máy có tai thỏ; không thay thế Dynamic Island thật.", SGKeyYanbiMiniIsland);
+    SGModRow *miniIsland = SGSwitchRow(@"Thanh nhạc nổi Yanbi",
+        @"Tự căn dưới tai thỏ, hiện trên mọi trang Spotify và trong ảnh chụp. Máy Dynamic Island dùng thẻ nhạc iOS.", SGKeyYanbiMiniIsland);
+    miniIsland.changed = ^(BOOL on) { SGYanbiIslandRefresh(); };
 
     // The tile colors are the system palette's, in dark mode except where SGColorRGB gives a lighter or deeper shade.
     [sections addObject:SGNotedSection(nil, @[
@@ -172,9 +137,7 @@ static UIViewController *modSettingsPage(void) {
         ]),
         SGSection(nil, @[mod]),
     ]];
-    SGVitrineSettingsPage *page = [[SGVitrineSettingsPage alloc] initWithTitle:@"Vitrine • yanbi" intro:nil sections:sections footer:nil];
-    __weak SGVitrineSettingsPage *weakPage = page;
-    miniIsland.changed = ^(BOOL enabled) { [weakPage refreshMiniIsland]; };
+    SGModPage *page = [[SGModPage alloc] initWithTitle:@"Vitrine • yanbi" intro:nil sections:sections footer:nil];
     page.tiles = YES;
     return page;
 }
@@ -375,4 +338,5 @@ static void attachDrawerRow(UICollectionView *list) {
     SGRegisterPages();
     SGCheckSigningOnce();
     SGWatchForUpdates();
+    SGYanbiIslandInstall();
 }
