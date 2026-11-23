@@ -86,7 +86,7 @@ private struct Cover: View {
             .aspectRatio(contentMode: .fill)
             .frame(width: side, height: side)
             .clipShape(RoundedRectangle(cornerRadius: side / 6, style: .continuous))
-            .accessibilityLabel("Album artwork")
+            .accessibilityLabel("Ảnh bìa album")
     }
 }
 
@@ -608,10 +608,10 @@ private struct Summary: View {
             case .controls:
                 Text("\(state.title) · \(state.artist)")
             case .queue:
-                Text(state.tracks.first.map { "Next: \($0.title)" } ?? "Chưa có bài hát tiếp theo")
+                Text(state.tracks.first.map { "Tiếp theo: \($0.title)" } ?? "Chưa có bài hát tiếp theo")
             case .timer:
                 if let end = state.timerEnd, end > Date() {
-                    Text("Music stops in \(Text(timerInterval: Date()...end, countsDown: true))")
+                    Text("Nhạc dừng sau \(Text(timerInterval: Date()...end, countsDown: true))")
                 } else if state.timerEndOfTrack {
                     Text("Nhạc dừng khi hết bài hát")
                 } else if state.timerEndOfAlbum == true {
@@ -744,8 +744,8 @@ private struct ControlsPage: View {
             HStack(spacing: 10) {
                 ChipButton(action: "previous", symbol: "backward.fill", label: "Previous")
                 // Named for what it shows, so Voice Control's "Tap Pause" finds it while it plays.
-                Toggle(isOn: !state.paused, intent: SGLiveActivityActionIntent("toggle")) { Text(state.paused ? "Play" : "Pause") }
-                    .accessibilityLabel(state.paused ? "Play" : "Pause")
+                Toggle(isOn: !state.paused, intent: SGLiveActivityActionIntent("toggle")) { Text(state.paused ? "Phát" : "Tạm dừng") }
+                    .accessibilityLabel(state.paused ? "Phát" : "Tạm dừng")
                     .toggleStyle(ChipStyle(symbol: "play.fill", onSymbol: "pause.fill", label: "Play", onLabel: "Pause", lights: false))
                 ChipButton(action: "next", symbol: "forward.fill", label: "Next")
                 Toggle(isOn: state.shuffle, intent: SGLiveActivityActionIntent("shuffle")) { Text("Phát ngẫu nhiên") }
@@ -817,7 +817,7 @@ private struct TimerPage: View {
                                 .font(.system(size: 34, weight: .bold).monospacedDigit())
                                 .foregroundStyle(accent)
                         } else {
-                            Text(state.timerEndOfAlbum == true ? "End of album" : "End of track")
+                            Text(state.timerEndOfAlbum == true ? "Hết album" : "Hết bài hát")
                                 .font(.title2.weight(.bold))
                                 .foregroundStyle(accent)
                         }
@@ -836,8 +836,8 @@ private struct TimerPage: View {
                     ChipButton(action: "timer:15", symbol: "moon", label: "15m", spoken: "15 minutes")
                     ChipButton(action: "timer:30", symbol: "moon", label: "30m", spoken: "30 minutes")
                     ChipButton(action: "timer:60", symbol: "moon", label: "1h", spoken: "1 hour")
-                    ChipButton(action: "timer:track", symbol: "music.note", label: "Track", spoken: "End of track")
-                    ChipButton(action: "timer:album", symbol: "square.stack", label: "Album", spoken: "End of album")
+                    ChipButton(action: "timer:track", symbol: "music.note", label: "Track", spoken: "Hết bài hát")
+                    ChipButton(action: "timer:album", symbol: "square.stack", label: "Album", spoken: "Hết album")
                 }
             }
         }

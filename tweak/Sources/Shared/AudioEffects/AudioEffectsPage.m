@@ -158,7 +158,7 @@ static NSSet<NSString *> *reportingEffects(void) {
 }
 
 NSString *SGDSPSummary(void) {
-    if (!SGDSPSwitch(SGKeyDSP)) return @"Off";
+    if (!SGDSPSwitch(SGKeyDSP)) return @"Tắt";
     NSUInteger on = 0;
     for (SGDSPEffect *e in effects()) on += e.key && SGDSPSwitch(e.key);
     if (!on) return @"On";

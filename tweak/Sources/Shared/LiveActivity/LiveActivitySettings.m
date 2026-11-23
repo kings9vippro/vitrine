@@ -88,7 +88,7 @@ UIViewController *SGLiveActivitySettingsPage(void) {
     __weak SGLiveActivityPreview *weakPreview = preview;
     void (^switched)(BOOL) = ^(BOOL on) { [weakPreview reload]; };
 
-    SGModRow *on = SGSwitchRow(@"Dynamic Island", @"Bài hát, lời nhạc và hẹn giờ trên màn hình khóa", SGKeyLiveActivity);
+    SGModRow *on = SGSwitchRow(@"Lời nhạc trực tiếp", @"Hiển thị trên màn hình khóa và Dynamic Island (máy tương thích)", SGKeyLiveActivity);
     on.changed = ^(BOOL value) { SGSetLiveActivityEnabled(value); };
     SGModRow *view = SGChoiceRow(@"Hiển thị", nil, SGKeyLiveActivityView, viewNames(), SGLiveActivityLyrics);
     // The lyrics view's own rows, shown while it is picked.
@@ -109,13 +109,13 @@ UIViewController *SGLiveActivitySettingsPage(void) {
     NSArray<NSString *> *fades = SGSleepTimerFadeNames();
     SGModRow *fade = SGMenuRow(@"Giảm âm từ từ", fades, ^NSString *{ return fades[(NSUInteger)SGSleepTimerFadeChoice()]; },
                                ^(NSInteger index) { SGSetInt(SGKeySleepTimerFade, index); });
-    SGLiveActivityPage *page = [[SGLiveActivityPage alloc] initWithTitle:@"Dynamic Island & Lời nhạc" intro:nil sections:@[
+    SGLiveActivityPage *page = [[SGLiveActivityPage alloc] initWithTitle:@"Lời nhạc trực tiếp" intro:nil sections:@[
         SGSection(nil, @[missingRow(), on, view, without, alignment, translation, size]),
         SGNotedSection(@"Thẻ hiển thị", @[artwork, colors, progress],
                        @"Spotify dùng sắc xanh đặc trưng; Theo ảnh bìa sử dụng màu của bài hát; "
                        @"Tối giản dùng chữ trắng trên nền hệ thống. "
                        @"Thông tin cũng có thể xuất hiện trên Apple Watch (từ iOS 18) và CarPlay (từ iOS 26). "
-                       @"Chạm vào thẻ sẽ mở Spotify trên iPhone."),
+                       @"Chạm vào thẻ sẽ mở Spotify nếu App ID ký IPA khớp Bundle ID. Trên iPhone tai thỏ, hoạt động này hiển thị ở màn hình khóa; đảo nhạc mini riêng chỉ xuất hiện bên trong trang Vitrine."),
         SGNotedSection(@"Hẹn giờ tắt nhạc", @[fade],
                        @"Điều chỉnh cách âm lượng giảm dần trước khi hẹn giờ tạm dừng Spotify. Áp dụng cho cả hẹn giờ trong ứng dụng và phím tắt."),
     ] footer:nil];

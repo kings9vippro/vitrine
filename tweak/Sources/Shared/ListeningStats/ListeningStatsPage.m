@@ -12,12 +12,12 @@ static const int64_t kDay = 86400;
 
 static NSString *duration(int64_t ms) {
     int64_t minutes = ms / 60000;
-    if (minutes < 60) return [NSString stringWithFormat:@"%lld min", minutes];
-    return [NSString stringWithFormat:@"%lld h %lld min", minutes / 60, minutes % 60];
+    if (minutes < 60) return [NSString stringWithFormat:@"%lld phút", minutes];
+    return [NSString stringWithFormat:@"%lld giờ %lld phút", minutes / 60, minutes % 60];
 }
 
 static NSString *playsText(NSUInteger plays) {
-    return [NSString stringWithFormat:plays == 1 ? @"%lu play" : @"%lu plays", (unsigned long)plays];
+    return [NSString stringWithFormat:plays == 1 ? @"%lu lượt nghe" : @"%lu lượt nghe", (unsigned long)plays];
 }
 
 static void showAlert(NSString *title, NSString *message) {
@@ -34,7 +34,7 @@ static SGModSection *topSection(NSString *title, NSArray<SGStatEntry *> *entries
         row.subtitle = entry.detail;
         [rows addObject:row];
     }];
-    if (!rows.count) [rows addObject:SGStatRow(@"Nothing yet", nil)];
+    if (!rows.count) [rows addObject:SGStatRow(@"Chưa có dữ liệu", nil)];
     return SGSection(title, rows);
 }
 
@@ -44,12 +44,12 @@ static UIViewController *periodPage(NSString *title, int64_t since) {
     NSString *time = duration(stats.ms), *plays = playsText(stats.plays);
     return [[SGModPage alloc] initWithTitle:title intro:nil sections:@[
         SGSection(nil, @[
-            SGStatRow(@"Listening time", ^NSString *{ return time; }),
-            SGStatRow(@"Plays", ^NSString *{ return plays; }),
+            SGStatRow(@"Thời gian nghe", ^NSString *{ return time; }),
+            SGStatRow(@"Lượt nghe", ^NSString *{ return plays; }),
         ]),
-        topSection(@"Top tracks", stats.tracks),
-        topSection(@"Top artists", stats.artists),
-        topSection(@"Top albums", stats.albums),
+        topSection(@"Bài hát nghe nhiều", stats.tracks),
+        topSection(@"Nghệ sĩ nghe nhiều", stats.artists),
+        topSection(@"Album nghe nhiều", stats.albums),
     ] footer:nil];
 }
 
@@ -77,7 +77,7 @@ static BOOL sg_importing;
     UITableViewController *page = self.page;
     sg_importing = YES;
     [page.tableView reloadData];
-    UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, @"Importing");
+    UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, @"Đang nhập dữ liệu");
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         NSMutableArray<SGPlay *> *plays = [NSMutableArray array];
         NSUInteger files = 0;
@@ -95,13 +95,13 @@ static BOOL sg_importing;
             sg_importing = NO;
             [page.tableView reloadData];
             if (!files) {
-                showAlert(@"No listening history found", @"Pick the StreamingHistory_music or Streaming_History_Audio files of Spotify's data export, or the zip they came in.");
+                showAlert(@"Không tìm thấy lịch sử nghe", @"Pick the StreamingHistory_music or Streaming_History_Audio files of Spotify's data export, or the zip they came in.");
                 return;
             }
             NSUInteger added = [SGListeningLog() merge:plays];
             SGLog(@"stats: %lu plays in %lu files, %lu new", (unsigned long)plays.count, (unsigned long)files, (unsigned long)added);
             [page.tableView reloadData];
-            showAlert(@"Imported", [NSString stringWithFormat:@"%@ added from %lu %@, %lu skipped as already here.", playsText(added),
+            showAlert(@"Đã nhập", [NSString stringWithFormat:@"%@ added from %lu %@, %lu skipped as already here.", playsText(added),
                                    (unsigned long)files, files == 1 ? @"file" : @"files", (unsigned long)(plays.count - added)]);
         });
     });
@@ -121,14 +121,14 @@ static void pickExport(UITableViewController *page) {
 }
 
 static void confirmErase(UITableViewController *page) {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Erase listening history?"
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Xóa lịch sử nghe nhạc?"
                                                                   message:@"Every play recorded on this phone and every one imported is deleted. Spotify's own history is untouched."
                                                            preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Erase" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+    [alert addAction:[UIAlertAction actionWithTitle:@"Xóa" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         [SGListeningLog() erase];
         [page.tableView reloadData];
     }]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
     [SGTopController() presentViewController:alert animated:YES completion:nil];
 }
 
@@ -136,7 +136,7 @@ static void confirmErase(UITableViewController *page) {
 
 UIViewController *SGListeningStatsPage(void) {
     NSMutableArray<SGModRow *> *periods = [NSMutableArray array];
-    NSArray *names = @[@"Past week", @"Past month", @"Past year", @"All time"];
+    NSArray *names = @[@"7 ngày qua", @"30 ngày qua", @"Năm qua", @"Tất cả thời gian"];
     NSArray *days = @[@7, @30, @365, @0];
     for (NSUInteger i = 0; i < names.count; i++) {
         NSString *name = names[i];
@@ -147,16 +147,16 @@ UIViewController *SGListeningStatsPage(void) {
         [periods addObject:row];
     }
 
-    SGModRow *import = SGWithSymbol(SGStatActionRow(@"Import Spotify's data export", nil,
-                                                    ^NSString *{ return sg_importing ? @"Importing…" : nil; }, nil), @"square.and.arrow.down");
-    SGModRow *erase = SGWithSymbol(SGActionRow(@"Erase listening history", nil, nil), @"trash");
+    SGModRow *import = SGWithSymbol(SGStatActionRow(@"Nhập dữ liệu Spotify", nil,
+                                                    ^NSString *{ return sg_importing ? @"Đang nhập…" : nil; }, nil), @"square.and.arrow.down");
+    SGModRow *erase = SGWithSymbol(SGActionRow(@"Xóa lịch sử nghe nhạc", nil, nil), @"trash");
     erase.color = SGRed();
-    SGModPage *page = [[SGModPage alloc] initWithTitle:@"Listening stats" intro:nil sections:@[
-        SGNotedSection(nil, @[SGSwitchRow(@"Record plays", nil, SGKeyListeningStats)],
-                       @"A play counts once it has run 30 seconds, or half of a shorter track. Everything stays on this phone."),
+    SGModPage *page = [[SGModPage alloc] initWithTitle:@"Thống kê nghe nhạc" intro:nil sections:@[
+        SGNotedSection(nil, @[SGSwitchRow(@"Ghi nhận lượt nghe", nil, SGKeyListeningStats)],
+                       @"Một lượt nghe được tính sau 30 giây, hoặc nửa thời lượng bài ngắn hơn. Dữ liệu chỉ lưu trên điện thoại này."),
         SGSection(nil, periods),
         SGNotedSection(nil, @[
-            SGStatRow(@"Plays", ^NSString *{ return [NSString stringWithFormat:@"%lu", (unsigned long)SGListeningLog().plays.count]; }),
+            SGStatRow(@"Lượt nghe", ^NSString *{ return [NSString stringWithFormat:@"%lu", (unsigned long)SGListeningLog().plays.count]; }),
             import,
         ], @"In Spotify's account privacy settings, ask for your data: the account data's StreamingHistory_music files, or the extended streaming history's Streaming_History_Audio files. Pick the JSON files or the zip they came in. Plays already here are skipped."),
         SGSection(nil, @[erase]),
