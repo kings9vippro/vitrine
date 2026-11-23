@@ -113,8 +113,8 @@ UIViewController *SGLiveActivitySettingsPage(void) {
         SGSection(nil, @[missingRow(), on, view, without, alignment, translation, size]),
         SGNotedSection(@"Thẻ hiển thị", @[artwork, colors, progress],
                        @"Spotify dùng sắc xanh đặc trưng; Theo ảnh bìa sử dụng màu của bài hát; "
-                       "@"Tối giản dùng chữ trắng trên nền hệ thống. "
-                       "@"Thông tin cũng có thể xuất hiện trên Apple Watch (từ iOS 18) và CarPlay (từ iOS 26). "
+                       @"Tối giản dùng chữ trắng trên nền hệ thống. "
+                       @"Thông tin cũng có thể xuất hiện trên Apple Watch (từ iOS 18) và CarPlay (từ iOS 26). "
                        @"Chạm vào thẻ sẽ mở Spotify trên iPhone."),
         SGNotedSection(@"Hẹn giờ tắt nhạc", @[fade],
                        @"Điều chỉnh cách âm lượng giảm dần trước khi hẹn giờ tạm dừng Spotify. Áp dụng cho cả hẹn giờ trong ứng dụng và phím tắt."),
