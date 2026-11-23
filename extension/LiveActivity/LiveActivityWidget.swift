@@ -90,6 +90,70 @@ private struct Cover: View {
     }
 }
 
+// Yanbi's portrait is bundled with the extension. It never enters ActivityKit's 4 KB state,
+// so adding branding does not make lyric and album-art updates unreliable.
+private enum YanbiAssets {
+    static let avatar: UIImage? = Bundle.main.url(forResource: "yanbi-avatar", withExtension: "jpg")
+        .flatMap { UIImage(contentsOfFile: $0.path) }
+}
+
+private struct DeveloperMark: View {
+    var body: some View {
+        HStack(spacing: 7) {
+            if let avatar = YanbiAssets.avatar {
+                Image(uiImage: avatar)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 25, height: 25)
+                    .clipShape(Circle())
+                    .overlay(Circle().strokeBorder(.white.opacity(0.24), lineWidth: 0.6))
+            } else {
+                Image(systemName: "person.crop.circle.fill")
+                    .foregroundStyle(green)
+            }
+            Text("developer yanbi")
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.92))
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct NowPlayingHeader: View {
+    let state: State
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 9) {
+            if let artwork = coverImage(state) {
+                Cover(image: artwork, side: 34)
+            } else {
+                Image(systemName: "music.note")
+                    .font(.title3)
+                    .frame(width: 34, height: 34)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(state.paused ? "ĐÃ TẠM DỪNG" : "ĐANG PHÁT TRÊN SPOTIFY")
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .tracking(1)
+                    .foregroundStyle(accentOf(state))
+                    .lineLimit(1)
+                Text(state.title.isEmpty ? "Spotify" : state.title)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                if !state.artist.isEmpty {
+                    Text(state.artist)
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.65))
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}
+
 // The compact and minimal Dynamic Island's leading view, which Apple Watch and CarPlay show too: the
 // cover, or a note before it is read.
 private struct Badge: View {
@@ -117,9 +181,9 @@ extension SGLyricsAttributes.Tab {
 
     var title: String {
         switch self {
-        case .controls: "Controls"
-        case .queue: "Queue"
-        case .timer: "Timer"
+        case .controls: "Điều khiển"
+        case .queue: "Danh sách phát"
+        case .timer: "Hẹn giờ"
         }
     }
 }
@@ -150,10 +214,10 @@ private func lyricsActivity<A: ActivityAttributes, Card: View>(
             .activitySystemActionForegroundColor(.white)
     } dynamicIsland: { context in
         DynamicIsland {
-            // The row beside the camera: a note, and the sleep timer or whether it plays.
+            // The system owns the camera/microphone privacy dots. This Live Activity never
+            // impersonates them or obscures their status; other system activities take priority.
             DynamicIslandExpandedRegion(.leading) {
-                Image(systemName: "music.note")
-                    .foregroundStyle(accentOf(context.state))
+                DeveloperMark()
                     .padding(.leading, 6)
             }
             DynamicIslandExpandedRegion(.trailing) {
@@ -168,16 +232,21 @@ private func lyricsActivity<A: ActivityAttributes, Card: View>(
                 .accented(context.state)
             }
             DynamicIslandExpandedRegion(.bottom) {
-                Group {
-                    if context.state.view == .panel {
-                        Summary(state: context.state)
-                    } else {
-                        ContentView(state: context.state, upNext: 3)
+                VStack(alignment: .leading, spacing: 8) {
+                    NowPlayingHeader(state: context.state)
+                    Rectangle()
+                        .fill(accentOf(context.state).opacity(0.28))
+                        .frame(height: 0.5)
+                    Group {
+                        if context.state.view == .panel {
+                            Summary(state: context.state)
+                        } else {
+                            ContentView(state: context.state, upNext: 3)
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
-                // The island is always black, whatever the card's tint.
                 .foregroundStyle(.white)
                 .accented(context.state)
             }
@@ -429,7 +498,7 @@ private struct LyricsView: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: frameEdge)
                 .direction(of: state.artist)
-            Text("No synced lyrics for this song")
+            Text("Bài hát chưa có lời đồng bộ")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.white.opacity(0.6))
                 .lineLimit(1)
@@ -504,11 +573,11 @@ private struct QueueView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Up next")
+            Text("Phát tiếp theo")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.6))
             if state.tracks.isEmpty {
-                Text("Nothing up next")
+                Text("Chưa có bài hát tiếp theo")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.6))
             }
@@ -539,16 +608,16 @@ private struct Summary: View {
             case .controls:
                 Text("\(state.title) · \(state.artist)")
             case .queue:
-                Text(state.tracks.first.map { "Next: \($0.title)" } ?? "Nothing up next")
+                Text(state.tracks.first.map { "Next: \($0.title)" } ?? "Chưa có bài hát tiếp theo")
             case .timer:
                 if let end = state.timerEnd, end > Date() {
                     Text("Music stops in \(Text(timerInterval: Date()...end, countsDown: true))")
                 } else if state.timerEndOfTrack {
-                    Text("Music stops at the end of this track")
+                    Text("Nhạc dừng khi hết bài hát")
                 } else if state.timerEndOfAlbum == true {
-                    Text("Music stops at the end of this album")
+                    Text("Nhạc dừng khi hết album")
                 } else {
-                    Text("No sleep timer")
+                    Text("Chưa đặt giờ tắt nhạc")
                 }
             }
         }
@@ -679,10 +748,10 @@ private struct ControlsPage: View {
                     .accessibilityLabel(state.paused ? "Play" : "Pause")
                     .toggleStyle(ChipStyle(symbol: "play.fill", onSymbol: "pause.fill", label: "Play", onLabel: "Pause", lights: false))
                 ChipButton(action: "next", symbol: "forward.fill", label: "Next")
-                Toggle(isOn: state.shuffle, intent: SGLiveActivityActionIntent("shuffle")) { Text("Shuffle") }
-                    .accessibilityLabel("Shuffle")
+                Toggle(isOn: state.shuffle, intent: SGLiveActivityActionIntent("shuffle")) { Text("Phát ngẫu nhiên") }
+                    .accessibilityLabel("Phát ngẫu nhiên")
                     .accessibilityValue(state.shuffle ? "On" : "Off")
-                    .toggleStyle(ChipStyle(symbol: "shuffle", label: "Shuffle"))
+                    .toggleStyle(ChipStyle(symbol: "shuffle", label: "Phát ngẫu nhiên"))
                 // Three states, so a button: the new one shows once the render lands.
                 ChipButton(action: "repeat", symbol: state.repeatMode == 2 ? "repeat.1" : "repeat",
                            label: "Repeat", lit: state.repeatMode != 0)
@@ -700,7 +769,7 @@ private struct QueuePage: View {
     var body: some View {
         VStack(spacing: 4) {
             if state.tracks.isEmpty {
-                Text("Nothing up next")
+                Text("Chưa có bài hát tiếp theo")
                     .font(.footnote)
                     .foregroundStyle(.white.opacity(0.6))
                     .frame(maxWidth: .infinity, minHeight: 60)
@@ -740,7 +809,7 @@ private struct TimerPage: View {
             if (state.timerEnd.map { $0 > Date() } ?? false) || state.timerEndOfTrack || state.timerEndOfAlbum == true {
                 HStack(alignment: .center, spacing: 12) {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("Music stops")
+                        Text("Nhạc sẽ dừng")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.6))
                         if let end = state.timerEnd {

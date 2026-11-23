@@ -9,7 +9,7 @@
 #import "SGLiveActivityPreview.h"
 
 static NSArray<NSString *> *viewNames(void) {
-    return @[@"Lyrics", @"Queue", @"Control menu"];
+    return @[@"Lời bài hát", @"Hàng chờ", @"Điều khiển"];
 }
 
 @interface SGLiveActivityPage : SGModPage
@@ -71,9 +71,9 @@ BOOL SGLiveActivityAllowedByInstall(void) {
 
 // At the top while the install lacks the key, saying why nothing shows and what to do.
 static SGModRow *missingRow(void) {
-    SGModRow *row = SGWarningRow(@"Missing from this install", @"Tap for why", ^{
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Live Activity is missing"
-            message:@"iOS shows a Live Activity only for an app that says it has one, and only Vitrine's IPA build writes that into Spotify. This Spotify was put together another way, such as with Vitrine's .deb injected by hand, so iOS turns the card down. Build the IPA with Vitrine to get it."
+    SGModRow *row = SGWarningRow(@"Thiếu tiện ích trong bản cài", @"Xem nguyên nhân", ^{
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Chưa có Hoạt động trực tiếp"
+            message:@"iOS chỉ hiển thị Hoạt động trực tiếp khi ứng dụng khai báo hỗ trợ. Hãy đóng gói IPA bằng workflow Vitrine để thêm tiện ích Dynamic Island và màn hình khóa."
             preferredStyle:UIAlertControllerStyleAlert];
         alert.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
         [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:nil]];
@@ -88,36 +88,36 @@ UIViewController *SGLiveActivitySettingsPage(void) {
     __weak SGLiveActivityPreview *weakPreview = preview;
     void (^switched)(BOOL) = ^(BOOL on) { [weakPreview reload]; };
 
-    SGModRow *on = SGOptionRow(@"Live Activity", nil, SGKeyLiveActivity);
+    SGModRow *on = SGSwitchRow(@"Dynamic Island", @"Bài hát, lời nhạc và hẹn giờ trên màn hình khóa", SGKeyLiveActivity);
     on.changed = ^(BOOL value) { SGSetLiveActivityEnabled(value); };
-    SGModRow *view = SGChoiceRow(@"Shows", nil, SGKeyLiveActivityView, viewNames(), SGLiveActivityLyrics);
+    SGModRow *view = SGChoiceRow(@"Hiển thị", nil, SGKeyLiveActivityView, viewNames(), SGLiveActivityLyrics);
     // The lyrics view's own rows, shown while it is picked.
-    SGModRow *without = menuRow(@"Without lyrics", SGKeyLiveActivityWithoutLyrics, @[@"Note", @"Track"], SGLiveActivityWithoutLyricsNote, preview);
-    SGModRow *alignment = menuRow(@"Alignment", SGKeyLiveActivityAlignment, @[@"Left", @"Center"], SGLiveActivityAlignCenter, preview);
-    SGModRow *translation = SGOptionRow(@"Translations", @"Under the line, when the lyrics have one", SGKeyLiveActivityTranslation);
+    SGModRow *without = menuRow(@"Khi không có lời", SGKeyLiveActivityWithoutLyrics, @[@"Nốt nhạc", @"Tên bài hát"], SGLiveActivityWithoutLyricsNote, preview);
+    SGModRow *alignment = menuRow(@"Căn chỉnh", SGKeyLiveActivityAlignment, @[@"Trái", @"Giữa"], SGLiveActivityAlignCenter, preview);
+    SGModRow *translation = SGOptionRow(@"Bản dịch", @"Hiện bản dịch ngay dưới lời bài hát", SGKeyLiveActivityTranslation);
     translation.changed = switched;
-    SGModRow *size = SGChoiceRow(@"Text size", nil, SGKeyLiveActivityTextSize, @[@"Small", @"Medium", @"Large"], SGLiveActivityTextMedium);
+    SGModRow *size = SGChoiceRow(@"Cỡ chữ", nil, SGKeyLiveActivityTextSize, @[@"Nhỏ", @"Vừa", @"Lớn"], SGLiveActivityTextMedium);
     for (SGModRow *row in @[without, alignment, translation, size]) row.visible = ^BOOL { return SGInt(SGKeyLiveActivityView, SGLiveActivityLyrics) == SGLiveActivityLyrics; };
     // Every view's.
-    SGModRow *artwork = SGSwitchRow(@"Artwork", @"The cover beside the track's name and in the Dynamic Island", SGKeyLiveActivityArtwork);
+    SGModRow *artwork = SGSwitchRow(@"Ảnh bìa", @"Hiện ảnh bìa trong Dynamic Island", SGKeyLiveActivityArtwork);
     artwork.changed = switched;
-    SGModRow *colors = menuRow(@"Colors", SGKeyLiveActivityColors, @[@"Spotify", @"Artwork", @"Plain"], SGLiveActivityColorsSpotify, preview);
-    SGModRow *progress = SGSwitchRow(@"Progress bar", nil, SGKeyLiveActivityProgressBar);
+    SGModRow *colors = menuRow(@"Màu sắc", SGKeyLiveActivityColors, @[@"Spotify", @"Theo ảnh bìa", @"Tối giản"], SGLiveActivityColorsSpotify, preview);
+    SGModRow *progress = SGSwitchRow(@"Thanh tiến trình", nil, SGKeyLiveActivityProgressBar);
     progress.changed = switched;
     // The sleep timer's own: the card's Timer tab, the Sleep Timer shortcut and its control all fade by it, card on or
     // off, and so does Spotify's own timer from the player's menu (Shared/Player/SpotifySleepTimer.m).
     NSArray<NSString *> *fades = SGSleepTimerFadeNames();
-    SGModRow *fade = SGMenuRow(@"Fade out", fades, ^NSString *{ return fades[(NSUInteger)SGSleepTimerFadeChoice()]; },
+    SGModRow *fade = SGMenuRow(@"Giảm âm từ từ", fades, ^NSString *{ return fades[(NSUInteger)SGSleepTimerFadeChoice()]; },
                                ^(NSInteger index) { SGSetInt(SGKeySleepTimerFade, index); });
-    SGLiveActivityPage *page = [[SGLiveActivityPage alloc] initWithTitle:@"Live Activity" intro:nil sections:@[
+    SGLiveActivityPage *page = [[SGLiveActivityPage alloc] initWithTitle:@"Dynamic Island & Lời nhạc" intro:nil sections:@[
         SGSection(nil, @[missingRow(), on, view, without, alignment, translation, size]),
-        SGNotedSection(@"Card", @[artwork, colors, progress],
-                       @"Colors: Spotify puts the cover's color behind Spotify's green, Artwork takes the green from the cover too, "
-                       @"and Plain is white on the lock screen's own background. "
-                       @"The card also shows on a paired Apple Watch, in its Smart Stack, from iOS 18, and in CarPlay from iOS 26, "
-                       @"as a smaller card of the line or the track. A tap there opens Spotify on the iPhone."),
-        SGNotedSection(@"Sleep timer", @[fade],
-                       @"How long the sound fades before a sleep timer pauses Spotify: the one set from the Timer tab, the Sleep Timer shortcut or Control Center, and Spotify's own from the player's ⋯ menu."),
+        SGNotedSection(@"Thẻ hiển thị", @[artwork, colors, progress],
+                       @"Spotify dùng sắc xanh đặc trưng; Theo ảnh bìa sử dụng màu của bài hát; "
+                       @"Tối giản dùng chữ trắng trên nền hệ thống. "
+                       @"Thông tin cũng có thể xuất hiện trên Apple Watch (từ iOS 18) và CarPlay (từ iOS 26). "
+                       @"Chạm vào thẻ sẽ mở Spotify trên iPhone."),
+        SGNotedSection(@"Hẹn giờ tắt nhạc", @[fade],
+                       @"Điều chỉnh cách âm lượng giảm dần trước khi hẹn giờ tạm dừng Spotify. Áp dụng cho cả hẹn giờ trong ứng dụng và phím tắt."),
     ] footer:nil];
     page.preview = preview;
     return page;
