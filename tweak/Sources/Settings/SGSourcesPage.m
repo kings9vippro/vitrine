@@ -82,8 +82,8 @@ typedef NS_ENUM(NSInteger, SGSourcesSection) {
 }
 
 - (UIView *)tableView:(UITableView *)table viewForHeaderInSection:(NSInteger)section {
-    if (section == SGSourcesSectionOn) return SGSectionHeader(table, _on.count ? @"Asked in this order" : @"None on");
-    return _off.count ? SGSectionHeader(table, @"Off") : nil;
+    if (section == SGSourcesSectionOn) return SGSectionHeader(table, _on.count ? @"Thứ tự tìm lời" : @"Chưa bật nguồn nào");
+    return _off.count ? SGSectionHeader(table, @"Đã tắt") : nil;
 }
 
 - (CGFloat)tableView:(UITableView *)table heightForHeaderInSection:(NSInteger)section {
