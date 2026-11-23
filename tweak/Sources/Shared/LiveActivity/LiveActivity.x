@@ -550,7 +550,7 @@ void SGSetLiveActivityEnabled(BOOL on) {
         // It was the redesign's alone until it moved to Shared/; whoever had it on keeps it on.
         SGMigrateKey(SGKeyLiveActivityWas, SGKeyLiveActivity);
         SGMigrateKey(SGKeyLiveActivityViewWas, SGKeyLiveActivityView);
-        BOOL on = SGFlag(SGKeyLiveActivity, NO);
+        BOOL on = SGFlag(SGKeyLiveActivity, YES);
         // From launch, card on or off, so a look that ends before the card is switched on still counts. Posted on
         // the main queue, so no queue: it is noted before the post returns.
         sg_lookEnded = [NSMutableSet set];
