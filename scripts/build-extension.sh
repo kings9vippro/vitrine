@@ -60,6 +60,8 @@ plutil -convert binary1 "$APPEX/Info.plist"
 # A tiny, local portrait for the expanded Dynamic Island. Never download an asset at runtime.
 # Kept out of ActivityKit's JSON state to preserve the live artwork and lyric size limit.
 install -m 0644 "$ROOT/extension/LiveActivity/yanbi-avatar.jpg" "$APPEX/yanbi-avatar.jpg"
+# The in-app notch overlay uses the same tiny image, without loading extension resources.
+install -m 0644 "$ROOT/extension/LiveActivity/yanbi-avatar.jpg" "$OUT/app/yanbi-avatar.jpg"
 
 # The taps', the shortcuts' and the controls' intents run inside Spotify, so Spotify's metadata has to
 # name them too, under the module the tweak compiles them in (Theos names it after the tweak instance).
