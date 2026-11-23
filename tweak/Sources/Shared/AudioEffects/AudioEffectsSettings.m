@@ -147,7 +147,7 @@ void SGDSPResetAll(void) {
 #pragma mark - lists
 
 NSArray<NSString *> *SGDSPConvolverModeNames(void) {
-    return @[@"Original", @"Trimmed", @"Minimum phase"];
+    return @[@"Nguyên bản", @"Đã cắt", @"Pha tối thiểu"];
 }
 
 NSArray<NSString *> *SGDSPCrossfeedModeNames(void) {
@@ -155,12 +155,12 @@ NSArray<NSString *> *SGDSPCrossfeedModeNames(void) {
 }
 
 NSArray<NSString *> *SGDSPReverbPresetNames(void) {
-    return @[@"Ambience", @"Small room", @"Medium room", @"Large room", @"Chamber", @"Plate", @"Small hall", @"Large hall", @"Cathedral"];
+    return @[@"Âm không gian", @"Phòng nhỏ", @"Phòng vừa", @"Phòng lớn", @"Buồng nhạc", @"Vang tấm", @"Hội trường nhỏ", @"Hội trường lớn", @"Nhà thờ"];
 }
 
 NSArray<NSString *> *SGDSPEqualizerPresetNames(void) {
-    return @[@"Flat", @"Bass", @"Loudness", @"Treble", @"Vocal", @"Warm", @"Bright", @"Rock", @"Electronic", @"Acoustic",
-             @"Classical", @"Podcast"];
+    return @[@"Phẳng", @"Âm trầm", @"Tăng độ nổi", @"Âm cao", @"Giọng hát", @"Ấm", @"Sáng", @"Rock", @"Nhạc điện tử", @"Acoustic",
+             @"Cổ điển", @"Podcast"];
 }
 
 NSArray<NSNumber *> *SGDSPEqualizerPreset(NSInteger index) {

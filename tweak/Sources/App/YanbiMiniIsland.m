@@ -1,156 +1,267 @@
-// An in-app miniature now-playing island for devices without system Dynamic Island.
-// It is deliberately confined to the Vitrine settings page's table header. No status-bar
-// hooks, private microphone/camera monitoring, additional window or background polling.
+// Yanbi Now Playing overlay: a non-key, touch-through window in Spotify's scene.
+// On an iPhone with a notch the capsule sits BELOW the protected status area.
+// On Dynamic Island devices ActivityKit owns the hardware island; do not draw over it.
+// The overlay is rendered in app screenshots but cannot cover SpringBoard or other apps.
+#import <UIKit/UIKit.h>
 #import <MediaPlayer/MediaPlayer.h>
+#import <QuartzCore/QuartzCore.h>
 #import "Core/SGCore.h"
-#import "Shared/Lyrics/Lyrics.h"
-#import "Headers/SPTPlayer.h"
+#import "Shared/Player/PlayerState.h"
 #import "YanbiMiniIsland.h"
 
-@interface SGYanbiMiniIslandView ()
-@property (nonatomic, strong) UIView *pill;
-@property (nonatomic, strong) UIImageView *art;
+@interface SGYanbiIslandCoordinator : NSObject <SGPlayerStateObserver>
+@property (nonatomic, strong) UIWindow *window;
+@property (nonatomic, strong) UIView *capsule;
+@property (nonatomic, strong) UIImageView *artwork;
 @property (nonatomic, strong) UILabel *eyebrow;
-@property (nonatomic, strong) UILabel *song;
+@property (nonatomic, strong) UILabel *title;
 @property (nonatomic, strong) UILabel *artist;
-@property (nonatomic, strong) UIButton *play;
-@property (nonatomic, strong) NSTimer *timer;
-@property (nonatomic, copy) NSString *artTrack;
+@property (nonatomic, strong) UIImageView *stateIcon;
+@property (nonatomic, strong) CAGradientLayer *gradient;
+@property (nonatomic, copy) NSString *lastArtworkID;
+@property (nonatomic) BOOL active;
++ (instancetype)shared;
+- (void)start;
+- (void)refresh;
+- (void)layoutIn:(UIView *)root;
 @end
 
-@implementation SGYanbiMiniIslandView
+@interface SGYanbiPassThroughWindow : UIWindow
+@end
+@implementation SGYanbiPassThroughWindow
+// Never steal taps, scrolls, the keyboard, or the key window from Spotify.
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    (void)point;
+    (void)event;
+    return nil;
+}
+@end
 
-- (instancetype)initWithFrame:(CGRect)frame {
-    if (!(self = [super initWithFrame:frame])) return nil;
-    self.backgroundColor = UIColor.clearColor;
+@interface SGYanbiOverlayController : UIViewController
+@end
+@implementation SGYanbiOverlayController
+- (void)loadView {
+    UIView *view = [UIView new];
+    view.backgroundColor = UIColor.clearColor;
+    view.userInteractionEnabled = NO;
+    self.view = view;
+}
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    [[SGYanbiIslandCoordinator shared] layoutIn:self.view];
+}
+@end
 
-    _pill = [UIView new];
-    _pill.backgroundColor = [UIColor colorWithWhite:0.08 alpha:0.97];
-    _pill.layer.cornerRadius = 28;
-    _pill.layer.cornerCurve = kCACornerCurveContinuous;
-    _pill.layer.borderWidth = 0.7;
-    _pill.layer.borderColor = [UIColor colorWithRed:0.26 green:0.85 blue:0.58 alpha:0.32].CGColor;
-    _pill.layer.masksToBounds = YES;
-    [self addSubview:_pill];
+@implementation SGYanbiIslandCoordinator
 
-    UIVisualEffectView *blur = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThinMaterialDark]];
-    blur.userInteractionEnabled = NO;
-    blur.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    blur.frame = CGRectMake(0, 0, 100, 64);
-    [_pill addSubview:blur];
-
-    _art = [UIImageView new];
-    _art.contentMode = UIViewContentModeScaleAspectFill;
-    _art.clipsToBounds = YES;
-    _art.layer.cornerRadius = 10;
-    _art.backgroundColor = [UIColor colorWithWhite:0.17 alpha:1];
-    _art.tintColor = UIColor.whiteColor;
-    [_pill addSubview:_art];
-
-    _eyebrow = [UILabel new];
-    _eyebrow.text = @"developer yanbi  •  đang phát";
-    _eyebrow.font = [UIFont systemFontOfSize:10 weight:UIFontWeightSemibold];
-    _eyebrow.textColor = [UIColor colorWithRed:0.43 green:0.98 blue:0.65 alpha:1];
-    _eyebrow.numberOfLines = 1;
-    [_pill addSubview:_eyebrow];
-
-    _song = [UILabel new];
-    _song.text = @"Spotify";
-    _song.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
-    _song.textColor = UIColor.whiteColor;
-    _song.numberOfLines = 1;
-    _song.adjustsFontSizeToFitWidth = YES;
-    _song.minimumScaleFactor = 0.78;
-    [_pill addSubview:_song];
-
-    _artist = [UILabel new];
-    _artist.text = @"Đang kiểm tra bài hát";
-    _artist.font = [UIFont systemFontOfSize:11 weight:UIFontWeightRegular];
-    _artist.textColor = [UIColor colorWithWhite:0.78 alpha:1];
-    _artist.numberOfLines = 1;
-    [_pill addSubview:_artist];
-
-    _play = [UIButton buttonWithType:UIButtonTypeSystem];
-    _play.tintColor = UIColor.whiteColor;
-    _play.accessibilityLabel = @"Phát hoặc tạm dừng bài hát";
-    [_play addTarget:self action:@selector(togglePlayback) forControlEvents:UIControlEventTouchUpInside];
-    [_pill addSubview:_play];
-    [self updateNowPlaying];
-    return self;
++ (instancetype)shared {
+    static SGYanbiIslandCoordinator *manager;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ manager = [SGYanbiIslandCoordinator new]; });
+    return manager;
 }
 
-- (void)layoutSubviews {
-    [super layoutSubviews];
-    CGRect full = self.bounds;
-    CGFloat horizontal = 20;
-    CGFloat width = MAX(0, CGRectGetWidth(full) - 2 * horizontal);
-    _pill.frame = CGRectMake(horizontal, 9, width, 66);
-    _art.frame = CGRectMake(12, 12, 42, 42);
-    CGFloat buttonWidth = 42;
-    _play.frame = CGRectMake(width - buttonWidth - 8, 11, buttonWidth, 44);
-    CGFloat contentX = 66;
-    CGFloat contentWidth = MAX(10, width - contentX - buttonWidth - 16);
-    _eyebrow.frame = CGRectMake(contentX, 8, contentWidth, 13);
-    _song.frame = CGRectMake(contentX, 22, contentWidth, 22);
-    _artist.frame = CGRectMake(contentX, 46, contentWidth, 13);
+- (void)start {
+    if (self.active) return;
+    self.active = YES;
+    SGAddPlayerStateObserver(self);
+    NSNotificationCenter *center = NSNotificationCenter.defaultCenter;
+    [center addObserver:self selector:@selector(refresh) name:UIApplicationDidBecomeActiveNotification object:nil];
+    [center addObserver:self selector:@selector(hide) name:UIApplicationWillResignActiveNotification object:nil];
+    [center addObserver:self selector:@selector(refresh) name:UISceneDidActivateNotification object:nil];
+    [center addObserver:self selector:@selector(refresh) name:UIDeviceOrientationDidChangeNotification object:nil];
+    [self refresh];
 }
 
-- (void)setActive:(BOOL)active {
-    if (!active) {
-        [_timer invalidate];
-        _timer = nil;
+- (UIWindowScene *)foregroundScene {
+    UIApplication *application = UIApplication.sharedApplication;
+    if (application.applicationState != UIApplicationStateActive) return nil;
+    UIWindowScene *first = nil;
+    for (UIScene *scene in application.connectedScenes) {
+        if (![scene isKindOfClass:UIWindowScene.class] || scene.activationState != UISceneActivationStateForegroundActive)
+            continue;
+        UIWindowScene *candidate = (UIWindowScene *)scene;
+        if (!first) first = candidate;
+        for (UIWindow *window in candidate.windows) {
+            if (window.isKeyWindow && window != self.window) return candidate;
+        }
+    }
+    return first;
+}
+
+- (void)hide {
+    self.window.hidden = YES;
+}
+
+- (void)refresh {
+    if (![NSThread isMainThread]) {
+        dispatch_async(dispatch_get_main_queue(), ^{ [self refresh]; });
         return;
     }
-    [self updateNowPlaying];
-    if (_timer) return;
-    _timer = [NSTimer timerWithTimeInterval:1 target:self selector:@selector(updateNowPlaying) userInfo:nil repeats:YES];
-    [NSRunLoop.mainRunLoop addTimer:_timer forMode:NSRunLoopCommonModes];
-}
-
-- (void)updateNowPlaying {
-    // This is Spotify's own player state, just like Shared/LiveActivity/LiveActivity.x.
-    id<SPTPlayer> player = SGKaraokePlayer();
-    SPTPlayerState *state = player.state;
-    NSString *title = state.track.trackTitle;
-    BOOL hasTrack = title.length > 0;
-    BOOL paused = hasTrack && state.isPaused;
-    _eyebrow.text = hasTrack ? (paused ? @"developer yanbi  •  tạm dừng" : @"developer yanbi  •  đang phát")
-                             : @"developer yanbi  •  Spotify";
-    _song.text = hasTrack ? title : @"Chưa có bài hát đang phát";
-    _artist.text = hasTrack ? (state.track.artistName ?: @"") : @"Mở nhạc để theo dõi tại đây";
-    _play.hidden = !hasTrack;
-    UIImageSymbolConfiguration *symbol = [UIImageSymbolConfiguration configurationWithPointSize:19 weight:UIImageSymbolWeightSemibold];
-    UIImage *control = [UIImage systemImageNamed:paused ? @"play.fill" : @"pause.fill" withConfiguration:symbol];
-    [_play setImage:control forState:UIControlStateNormal];
-    _play.accessibilityLabel = paused ? @"Tiếp tục phát nhạc" : @"Tạm dừng nhạc";
-    if (!hasTrack) {
-        _artTrack = nil;
-        _art.contentMode = UIViewContentModeCenter;
-        _art.image = [UIImage systemImageNamed:@"music.note"];
+    if (!SGFlag(SGKeyYanbiMiniIsland, YES) || UIDevice.currentDevice.userInterfaceIdiom != UIUserInterfaceIdiomPhone) {
+        [self hide];
         return;
     }
+    UIWindowScene *scene = [self foregroundScene];
+    if (!scene) {
+        [self hide];
+        return;
+    }
+    if (self.window.windowScene != scene) {
+        self.window.hidden = YES;
+        self.window = nil;
+        [self createWindowInScene:scene];
+    }
+    [self updateMusic:SGPlayerState()];
+    self.window.hidden = NO;
+    [self layoutIn:self.window.rootViewController.view];
+}
 
-    // Do not decode album artwork each second. Only update once the track changes.
-    if ([_artTrack isEqualToString:title]) return;
-    _artTrack = [title copy];
+- (void)createWindowInScene:(UIWindowScene *)scene {
+    SGYanbiPassThroughWindow *window = [[SGYanbiPassThroughWindow alloc] initWithWindowScene:scene];
+    window.frame = scene.coordinateSpace.bounds;
+    window.windowLevel = UIWindowLevelNormal + 5;
+    window.backgroundColor = UIColor.clearColor;
+    SGYanbiOverlayController *controller = [SGYanbiOverlayController new];
+    window.rootViewController = controller;
+    window.userInteractionEnabled = NO;
+
+    UIView *pill = [UIView new];
+    pill.backgroundColor = [UIColor colorWithRed:0.055 green:0.066 blue:0.066 alpha:0.98];
+    pill.layer.cornerRadius = 23;
+    pill.layer.cornerCurve = kCACornerCurveContinuous;
+    pill.layer.borderWidth = 0.8;
+    pill.layer.borderColor = [UIColor colorWithRed:0.35 green:0.93 blue:0.60 alpha:0.52].CGColor;
+    pill.layer.shadowColor = [UIColor colorWithRed:0.25 green:0.78 blue:0.54 alpha:1].CGColor;
+    pill.layer.shadowOpacity = 0.18;
+    pill.layer.shadowRadius = 10;
+    pill.layer.shadowOffset = CGSizeMake(0, 3);
+    [controller.view addSubview:pill];
+    self.capsule = pill;
+
+    CAGradientLayer *gradient = [CAGradientLayer layer];
+    gradient.colors = @[(id)[UIColor colorWithRed:0.11 green:0.18 blue:0.15 alpha:1].CGColor,
+                        (id)[UIColor colorWithRed:0.055 green:0.060 blue:0.067 alpha:1].CGColor];
+    gradient.startPoint = CGPointMake(0, 0);
+    gradient.endPoint = CGPointMake(1, 1);
+    gradient.cornerRadius = 23;
+    [pill.layer insertSublayer:gradient atIndex:0];
+    self.gradient = gradient;
+
+    UIImageView *art = [UIImageView new];
+    art.contentMode = UIViewContentModeScaleAspectFill;
+    art.layer.cornerRadius = 10;
+    art.clipsToBounds = YES;
+    art.backgroundColor = [UIColor colorWithWhite:0.18 alpha:1];
+    art.tintColor = UIColor.whiteColor;
+    [pill addSubview:art];
+    self.artwork = art;
+    NSString *portrait = [NSBundle.mainBundle pathForResource:@"yanbi-avatar" ofType:@"jpg"];
+    if (portrait.length) art.image = [UIImage imageWithContentsOfFile:portrait];
+    if (!art.image) art.image = [UIImage systemImageNamed:@"music.note"];
+
+    UILabel *eyebrow = [UILabel new];
+    eyebrow.font = [UIFont systemFontOfSize:9 weight:UIFontWeightSemibold];
+    eyebrow.textColor = [UIColor colorWithRed:0.38 green:0.96 blue:0.61 alpha:1];
+    eyebrow.text = @"developer yanbi · Spotify";
+    eyebrow.lineBreakMode = NSLineBreakByTruncatingTail;
+    [pill addSubview:eyebrow];
+    self.eyebrow = eyebrow;
+
+    UILabel *title = [UILabel new];
+    title.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+    title.textColor = UIColor.whiteColor;
+    title.lineBreakMode = NSLineBreakByTruncatingTail;
+    [pill addSubview:title];
+    self.title = title;
+
+    UILabel *artist = [UILabel new];
+    artist.font = [UIFont systemFontOfSize:10 weight:UIFontWeightRegular];
+    artist.textColor = [UIColor colorWithWhite:0.71 alpha:1];
+    artist.lineBreakMode = NSLineBreakByTruncatingTail;
+    [pill addSubview:artist];
+    self.artist = artist;
+
+    UIImageView *symbol = [UIImageView new];
+    symbol.tintColor = [UIColor colorWithRed:0.41 green:0.95 blue:0.61 alpha:1];
+    symbol.contentMode = UIViewContentModeCenter;
+    [pill addSubview:symbol];
+    self.stateIcon = symbol;
+    self.window = window;
+}
+
+- (void)layoutIn:(UIView *)root {
+    if (!root || !self.capsule) return;
+    UIWindowScene *scene = self.window.windowScene;
+    CGFloat w = CGRectGetWidth(root.bounds);
+    CGFloat h = CGRectGetHeight(root.bounds);
+    CGFloat top = MAX(root.safeAreaInsets.top, self.window.safeAreaInsets.top);
+    BOOL portrait = scene && UIInterfaceOrientationIsPortrait(scene.interfaceOrientation);
+    // Dynamic Island iPhones have a taller safe area. Prefer native ActivityKit on them.
+    BOOL systemIsland = top >= 54;
+    BOOL notch = top >= 35 && top < 54;
+    BOOL show = notch && portrait && w >= 320 && h >= 550 && SGFlag(SGKeyYanbiMiniIsland, YES);
+    self.capsule.hidden = !show;
+    if (!show) return;
+    CGFloat width = MIN(w - 44, 296);
+    CGFloat height = 57;
+    // Just BELOW the camera/status-bar reserved area: this never draws over system privacy indicators.
+    CGFloat y = top + 3;
+    self.capsule.frame = CGRectMake(round((w - width) / 2), y, width, height);
+    self.gradient.frame = self.capsule.bounds;
+    self.artwork.frame = CGRectMake(9, 10, 37, 37);
+    CGFloat x = 54;
+    CGFloat textWidth = MAX(40, width - x - 39);
+    self.eyebrow.frame = CGRectMake(x, 6, textWidth, 13);
+    self.title.frame = CGRectMake(x, 19, textWidth, 21);
+    self.artist.frame = CGRectMake(x, 39, textWidth, 13);
+    self.stateIcon.frame = CGRectMake(width - 35, 17, 27, 24);
+    (void)systemIsland;
+}
+
+- (void)updateMusic:(SPTPlayerState *)state {
+    NSString *song = state.track.trackTitle;
+    BOOL playing = song.length && !state.isPaused;
+    NSString *artist = state.track.artistName;
+    self.eyebrow.text = playing ? @"developer yanbi · đang phát" :
+                        song.length ? @"developer yanbi · tạm dừng" : @"developer yanbi · Spotify";
+    self.title.text = song.length ? song : @"Sẵn sàng phát nhạc";
+    self.artist.text = artist.length ? artist : @"Mở nhạc để bắt đầu";
+    UIImageSymbolConfiguration *style = [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIImageSymbolWeightBold];
+    self.stateIcon.image = [UIImage systemImageNamed:playing ? @"waveform" : song.length ? @"pause.fill" : @"music.note"
+                                  withConfiguration:style];
+
+    NSString *trackID = state.track.URI ? [state.track.URI description] : song;
+    if ([self.lastArtworkID isEqualToString:trackID]) return;
+    self.lastArtworkID = [trackID copy];
     NSDictionary *info = MPNowPlayingInfoCenter.defaultCenter.nowPlayingInfo;
-    if (![info[MPMediaItemPropertyTitle] isEqualToString:title]) info = nil;
-    MPMediaItemArtwork *artwork = info[MPMediaItemPropertyArtwork];
-    UIImage *cover = [artwork isKindOfClass:MPMediaItemArtwork.class] ? [artwork imageWithSize:CGSizeMake(60, 60)] : nil;
-    _art.contentMode = cover ? UIViewContentModeScaleAspectFill : UIViewContentModeCenter;
-    _art.image = cover ?: [UIImage systemImageNamed:@"music.note"];
+    NSString *nowTitle = info[MPMediaItemPropertyTitle];
+    MPMediaItemArtwork *cover = [nowTitle isEqualToString:song] ? info[MPMediaItemPropertyArtwork] : nil;
+    UIImage *image = [cover isKindOfClass:MPMediaItemArtwork.class] ? [cover imageWithSize:CGSizeMake(64, 64)] : nil;
+    if (!image) {
+        NSString *portrait = [NSBundle.mainBundle pathForResource:@"yanbi-avatar" ofType:@"jpg"];
+        image = portrait.length ? [UIImage imageWithContentsOfFile:portrait] : nil;
+    }
+    self.artwork.image = image ?: [UIImage systemImageNamed:@"music.note"];
 }
 
-- (void)togglePlayback {
-    id<SPTPlayer> player = SGKaraokePlayer();
-    if (!player.state.track.trackTitle.length) return;
-    if (player.state.isPaused) [player resume:nil];
-    else [player pause:nil];
-    [self updateNowPlaying];
+- (void)playerStateDidChange:(SPTPlayerState *)state {
+    if (![NSThread isMainThread]) {
+        dispatch_async(dispatch_get_main_queue(), ^{ [self playerStateDidChange:state]; });
+        return;
+    }
+    if (!self.window || self.window.isHidden) return;
+    [self updateMusic:state];
 }
-
-- (void)dealloc {
-    [_timer invalidate];
-}
-
 @end
+
+void SGYanbiIslandInstall(void) {
+    if (![NSThread isMainThread]) {
+        dispatch_async(dispatch_get_main_queue(), ^{ SGYanbiIslandInstall(); });
+        return;
+    }
+    [[SGYanbiIslandCoordinator shared] start];
+}
+void SGYanbiIslandRefresh(void) {
+    [[SGYanbiIslandCoordinator shared] refresh];
+}

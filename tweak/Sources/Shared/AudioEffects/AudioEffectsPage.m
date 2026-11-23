@@ -105,49 +105,49 @@ static NSString *graphicEqSummary(void) {
 // The effects' cards. The engine runs them in an order of its own (SGDSPEngine.m).
 static NSArray<SGDSPEffect *> *effects(void) {
     // Stored as 0 to 100 around 50, shown as the side's level, 100% leaving it as it is.
-    SGDSPRow *width = slider(@"Width", SGKeyDSPStereoWideLevel, @"%");
+    SGDSPRow *width = slider(@"Độ rộng", SGKeyDSPStereoWideLevel, @"%");
     width.scale = 2;
     return @[
-        effect(nil, @"Output control", @"Gain and limiter, always on", @[
-            slider(@"Post gain", SGKeyDSPPostGain, @" dB"),
-            slider(@"Limiter threshold", SGKeyDSPLimiterThreshold, @" dB"),
-            slider(@"Limiter release", SGKeyDSPLimiterRelease, @" ms"),
+        effect(nil, @"Điều khiển đầu ra", @"Khuếch đại và giới hạn âm lượng, luôn bật", @[
+            slider(@"Khuếch đại cuối", SGKeyDSPPostGain, @" dB"),
+            slider(@"Ngưỡng giới hạn", SGKeyDSPLimiterThreshold, @" dB"),
+            slider(@"Thời gian nhả giới hạn", SGKeyDSPLimiterRelease, @" ms"),
         ]),
-        effect(SGKeyDSPCompander, @"Multiband compander", @"Evens out or livens up the dynamics", @[
+        effect(SGKeyDSPCompander, @"Nén/giãn âm đa dải", @"Cân bằng hoặc tăng độ động âm thanh", @[
             row(SGDSPRowCurve, nil, SGKeyDSPCompanderGains),
             slider(@"Release", SGKeyDSPCompanderTime, @" s"),
         ]),
-        effect(SGKeyDSPBass, @"Bass boost", @"Lifts the low end", @[
-            slider(@"Maximum gain", SGKeyDSPBassGain, @" dB"),
+        effect(SGKeyDSPBass, @"Tăng âm trầm", @"Làm rõ dải tần thấp", @[
+            slider(@"Mức khuếch đại tối đa", SGKeyDSPBassGain, @" dB"),
         ]),
-        effect(SGKeyDSPEqualizer, @"Equalizer", @"15 bands, with presets", @[
+        effect(SGKeyDSPEqualizer, @"Bộ cân bằng âm", @"15 dải tần với cấu hình sẵn", @[
             row(SGDSPRowCurve, nil, SGKeyDSPEqualizerGains),
         ]),
-        effect(SGKeyDSPGraphicEq, @"Graphic EQ", @"Any curve, like AutoEq's corrections", @[
-            pageRow(@"Response", ^NSString *{ return graphicEqSummary(); }, ^UIViewController *{ return SGDSPGraphicEqPage(); }),
+        effect(SGKeyDSPGraphicEq, @"EQ đồ họa", @"Tự tạo đường cong đáp tuyến như AutoEq", @[
+            pageRow(@"Đáp tuyến", ^NSString *{ return graphicEqSummary(); }, ^UIViewController *{ return SGDSPGraphicEqPage(); }),
         ]),
-        effect(SGKeyDSPConvolver, @"Convolver", @"Recorded rooms and speakers", @[
-            fileRow(@"Impulse response", SGDSPFileImpulseResponse),
-            choice(@"Optimization", SGKeyDSPConvolverMode, SGDSPConvolverModeNames()),
+        effect(SGKeyDSPConvolver, @"Mô phỏng không gian", @"Mô phỏng phòng và loa đã đo", @[
+            fileRow(@"Đáp ứng xung", SGDSPFileImpulseResponse),
+            choice(@"Tối ưu", SGKeyDSPConvolverMode, SGDSPConvolverModeNames()),
         ]),
-        effect(SGKeyDSPDDC, @"ViPER DDC", @"Headphone correction files", @[
+        effect(SGKeyDSPDDC, @"ViPER DDC", @"Tệp hiệu chỉnh tai nghe", @[
             fileRow(@"DDC file", SGDSPFileDDC),
         ]),
-        effect(SGKeyDSPLiveprog, @"Liveprog", @"Effects written as EEL scripts", @[
-            fileRow(@"Script", SGDSPFileLiveprog),
+        effect(SGKeyDSPLiveprog, @"Liveprog", @"Hiệu ứng bằng mã EEL", @[
+            fileRow(@"Tập lệnh", SGDSPFileLiveprog),
         ]),
-        effect(SGKeyDSPReverb, @"Reverb", @"A room around the music", @[
-            choice(@"Room", SGKeyDSPReverbPreset, SGDSPReverbPresetNames()),
-            slider(@"Amount", SGKeyDSPReverbAmount, @"%"),
+        effect(SGKeyDSPReverb, @"Vang âm", @"Tạo cảm giác không gian quanh âm nhạc", @[
+            choice(@"Không gian", SGKeyDSPReverbPreset, SGDSPReverbPresetNames()),
+            slider(@"Cường độ", SGKeyDSPReverbAmount, @"%"),
         ]),
-        effect(SGKeyDSPStereoWide, @"Stereo widening", @"A wider or narrower stereo image", @[
+        effect(SGKeyDSPStereoWide, @"Mở rộng âm stereo", @"Mở rộng hoặc thu hẹp âm hình stereo", @[
             width,
         ]),
-        effect(SGKeyDSPCrossfeed, @"Crossfeed", @"Softer stereo on headphones", @[
-            choice(@"Preset", SGKeyDSPCrossfeedMode, SGDSPCrossfeedModeNames()),
+        effect(SGKeyDSPCrossfeed, @"Trộn kênh", @"Nghe stereo tự nhiên hơn trên tai nghe", @[
+            choice(@"Cấu hình sẵn", SGKeyDSPCrossfeedMode, SGDSPCrossfeedModeNames()),
         ]),
-        effect(SGKeyDSPTube, @"Analog modeling", @"Tube amplifier warmth", @[
-            slider(@"Drive", SGKeyDSPTubeDrive, @" dB"),
+        effect(SGKeyDSPTube, @"Mô phỏng analog", @"Chất âm ấm của ampli đèn", @[
+            slider(@"Độ méo hài", SGKeyDSPTubeDrive, @" dB"),
         ]),
     ];
 }
@@ -162,7 +162,7 @@ NSString *SGDSPSummary(void) {
     NSUInteger on = 0;
     for (SGDSPEffect *e in effects()) on += e.key && SGDSPSwitch(e.key);
     if (!on) return @"On";
-    return on == 1 ? @"1 effect" : [NSString stringWithFormat:@"%lu effects", (unsigned long)on];
+    return on == 1 ? @"1 hiệu ứng" : [NSString stringWithFormat:@"%lu effects", (unsigned long)on];
 }
 
 #pragma mark - numbers
@@ -394,7 +394,7 @@ static UIFont *tabular(UIFont *font) {
 
 - (instancetype)init {
     if (!(self = [super initWithStyle:UITableViewStyleInsetGrouped])) return nil;
-    self.title = @"Audio effects";
+    self.title = @"Hiệu ứng âm thanh";
     _effects = effects();
     _open = [NSMutableSet set];
     _errors = [NSMutableDictionary dictionary];
@@ -403,7 +403,7 @@ static UIFont *tabular(UIFont *font) {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    _intro = SGNote(@"Changes apply straight away.");
+    _intro = SGNote(@"Thay đổi áp dụng ngay.");
     self.tableView.tableHeaderView = _intro;
     [self buildCredits];
     self.tableView.tableFooterView = _credits;
@@ -553,18 +553,18 @@ static UIFont *tabular(UIFont *font) {
 }
 
 - (UITableViewCell *)tableView:(UITableView *)table cellForRowAtIndexPath:(NSIndexPath *)path {
-    if (path.section == 0 && path.row == 1) return [self valueCell:table title:@"Presets" value:@""];
-    if (path.section == 0 && path.row == 2) return [self valueCell:table title:@"Headphones" value:SGDSPHeadphoneSummary()];
+    if (path.section == 0 && path.row == 1) return [self valueCell:table title:@"Cấu hình" value:@""];
+    if (path.section == 0 && path.row == 2) return [self valueCell:table title:@"Tai nghe" value:SGDSPHeadphoneSummary()];
     if (path.section == 0) {
         UITableViewCell *cell = SGDequeueCell(table, @"master");
-        [self fillHead:cell title:@"Effects" subtitle:SGDSPStatus()];
+        [self fillHead:cell title:@"Hiệu ứng" subtitle:SGDSPStatus()];
         cell.accessoryView = [self switchOn:SGDSPSwitch(SGKeyDSP) action:@selector(masterToggled:) tag:0];
         return cell;
     }
     SGDSPEffect *e = [self effectIn:path.section];
     if (!e) {
         UITableViewCell *cell = SGDequeueCell(table, @"reset");
-        [self fillHead:cell title:@"Reset all effects" subtitle:nil];
+        [self fillHead:cell title:@"Đặt lại mọi hiệu ứng" subtitle:nil];
         UIListContentConfiguration *content = (UIListContentConfiguration *)cell.contentConfiguration;
         content.textProperties.color = SGRed();
         cell.contentConfiguration = content;
@@ -622,7 +622,7 @@ static UIFont *tabular(UIFont *font) {
 // Red, the way Settings' warning rows are: the effect's last change did not take, and why.
 - (UITableViewCell *)errorCell:(UITableView *)table text:(NSString *)text {
     UITableViewCell *cell = SGDequeueCell(table, @"error");
-    SGFillCell(cell, @"Not applied", text, SGRed(), @"exclamationmark.triangle.fill");
+    SGFillCell(cell, @"Chưa áp dụng", text, SGRed(), @"exclamationmark.triangle.fill");
     UIListContentConfiguration *content = (UIListContentConfiguration *)cell.contentConfiguration;
     content.secondaryTextProperties.color = SGRed();
     cell.contentConfiguration = content;
@@ -717,17 +717,17 @@ static UIFont *tabular(UIFont *font) {
 }
 
 - (void)confirmReset {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Reset all effects?"
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Đặt lại tất cả hiệu ứng?"
         message:@"Every effect goes off, and every value, curve and file choice back to its default. The Effects switch and your imported files stay."
         preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Reset" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+    [alert addAction:[UIAlertAction actionWithTitle:@"Đặt lại" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         SGDSPResetAll();
         [self readState];
         [UIView transitionWithView:self.tableView duration:0.25 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
             [self.tableView reloadData];
         } completion:nil];
     }]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 

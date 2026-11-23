@@ -334,18 +334,18 @@ NSTimeInterval SGSpicyLyricsWait(NSHTTPURLResponse *reply, NSDate *now) {
 
 // What a refusal's error code means, short enough for the source's row.
 static NSString *refusalReason(NSString *code) {
-    if ([code isEqualToString:@"origin_not_allowed"] || [code isEqualToString:@"origins_not_configured"]) return @"Key rejected: allow No origin header";
-    if ([code isEqualToString:@"application_paused"]) return @"Key rejected: paused";
-    if ([code isEqualToString:@"key_revoked"]) return @"Key rejected: revoked";
-    if ([code isEqualToString:@"key_not_found"] || [code isEqualToString:@"key_malformed"] || [code isEqualToString:@"malformed_authorization"]) return @"Key rejected: not found";
+    if ([code isEqualToString:@"origin_not_allowed"] || [code isEqualToString:@"origins_not_configured"]) return @"Khóa bị từ chối: cho phép No origin header";
+    if ([code isEqualToString:@"application_paused"]) return @"Khóa bị tạm dừng";
+    if ([code isEqualToString:@"key_revoked"]) return @"Khóa đã bị thu hồi";
+    if ([code isEqualToString:@"key_not_found"] || [code isEqualToString:@"key_malformed"] || [code isEqualToString:@"malformed_authorization"]) return @"Không tìm thấy khóa";
     for (NSString *word in @[@"suspended", @"disabled", @"deleted"]) {
-        if ([code containsString:word]) return @"Key rejected: disabled";
+        if ([code containsString:word]) return @"Khóa đã bị vô hiệu hóa";
     }
-    return @"Key rejected";
+    return @"Khóa bị từ chối";
 }
 
 NSString *SGSpicyLyricsStatus(void) {
-    if (!SGSpicyLyricsKeySet()) return @"Needs a key";
+    if (!SGSpicyLyricsKeySet()) return @"Cần khóa API";
     return sg_refused ? refusalReason(sg_refused) : nil;
 }
 
@@ -422,10 +422,10 @@ SGLyricsAsk SGSpicyLyricsAsk = ^(SGLyricsQuery *query, void (^done)(SGLyricsResu
 // ASCII, 12 characters at the least.
 NSString *SGSpicyLyricsKeyProblem(NSString *key);
 NSString *SGSpicyLyricsKeyProblem(NSString *key) {
-    if ([key hasPrefix:@"sl_sk_"]) return @"That is a secret key, which belongs on a server, not in an app.";
+    if ([key hasPrefix:@"sl_sk_"]) return @"Đây là khóa bí mật chỉ dùng trên máy chủ. Không nhập vào ứng dụng.";
     NSCharacterSet *printable = [NSCharacterSet characterSetWithRange:NSMakeRange(0x21, 0x7E - 0x21 + 1)];
     if (![key hasPrefix:@"sl_pk_"] || key.length < 12 || [key rangeOfCharacterFromSet:printable.invertedSet].location != NSNotFound) {
-        return @"That is not a publishable key.";
+        return @"Đây không phải khóa có thể công khai (sl_pk_).";
     }
     return nil;
 }
@@ -450,11 +450,12 @@ void SGSpicyLyricsForgetKey(void) {
 }
 
 static void askForKey(NSString *problem) {
-    NSString *how = @"Sign up at Spicy Lyrics for Developers, create an application, turn on client access with "
-                    @"No origin header allowed, and paste its publishable key (sl_pk_). The key stays on this iPhone.";
+    NSString *how = @"Đăng ký tại Spicy Lyrics for Developers, tạo ứng dụng, bật quyền truy cập client với No origin header allowed. "
+                    @"Chỉ nhập khóa công khai bắt đầu bằng sl_pk_. Khóa được lưu trong Keychain của iPhone. "
+                    @"Không có khóa vẫn dùng được các nguồn lời bài hát miễn phí khác.";
     NSString *refused = SGSpicyLyricsKeySet() ? SGSpicyLyricsStatus() : nil;
     NSString *lead = problem ?: refused ? [refused stringByAppendingString:@"."] : nil;
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Spicy Lyrics Key"
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Khóa Spicy Lyrics"
         message:lead ? [NSString stringWithFormat:@"%@\n\n%@", lead, how] : how
         preferredStyle:UIAlertControllerStyleAlert];
     [alert addTextFieldWithConfigurationHandler:^(UITextField *field) {
@@ -464,7 +465,7 @@ static void askForKey(NSString *problem) {
         field.autocapitalizationType = UITextAutocapitalizationTypeNone;
         field.spellCheckingType = UITextSpellCheckingTypeNo;
     }];
-    UIAlertAction *save = [UIAlertAction actionWithTitle:@"Save" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+    UIAlertAction *save = [UIAlertAction actionWithTitle:@"Lưu khóa" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         NSString *key = [alert.textFields.firstObject.text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
         if (!key.length) return;
         NSString *wrong = SGSpicyLyricsKeyProblem(key);
@@ -473,20 +474,20 @@ static void askForKey(NSString *problem) {
         else setKey(key);
     }];
     [alert addAction:save];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Open Dashboard" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+    [alert addAction:[UIAlertAction actionWithTitle:@"Mở trang quản lý khóa" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         [UIApplication.sharedApplication openURL:[NSURL URLWithString:kDashboard] options:@{} completionHandler:nil];
     }]];
     if (SGSpicyLyricsKeySet()) {
-        [alert addAction:[UIAlertAction actionWithTitle:@"Remove" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+        [alert addAction:[UIAlertAction actionWithTitle:@"Xóa khóa" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
             setKey(nil);
         }]];
     }
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
     alert.preferredAction = save;
     [SGTopController() presentViewController:alert animated:YES completion:nil];
 }
 
 SGModRow *SGSpicyLyricsKeyRow(void) {
-    return SGStatActionRow(@"Spicy Lyrics key", @"Community word syncs, with your own key",
-                           ^NSString *{ return !SGSpicyLyricsKeySet() ? @"Off" : sg_refused ? @"Rejected" : @"Set"; }, ^{ askForKey(nil); });
+    return SGStatActionRow(@"Khóa Spicy Lyrics", @"Đồng bộ từng từ bằng khóa cá nhân; các nguồn khác không cần khóa.",
+                           ^NSString *{ return !SGSpicyLyricsKeySet() ? @"Chưa đặt" : sg_refused ? @"Bị từ chối" : @"Đã lưu"; }, ^{ askForKey(nil); });
 }

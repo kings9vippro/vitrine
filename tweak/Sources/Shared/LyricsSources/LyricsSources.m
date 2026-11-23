@@ -192,16 +192,16 @@ NSArray<SGLyricsProvider *> *SGLyricsAllProviders(void) {
             return provider;
         };
         all = @[
-            make(@"binilyrics", @"BiniLyrics", @"Apple Music word timing", SGBiniLyricsAsk),
-            make(@"musixmatch", @"Musixmatch", @"Spotify's licensed catalog", SGMusixmatchAsk),
-            make(@"unison", @"Unison", @"Hand-timed, few tracks", SGUnisonAsk),
-            make(@"netease", @"NetEase", @"Word timing, censored", SGNetEaseAsk),
-            make(@"lrclib", @"LRCLIB", @"Line timing, open fallback", SGLrcLibAsk),
-            make(SGSpicyLyricsKey, @"Spicy Lyrics", @"Community word syncs, your own key", SGSpicyLyricsAsk),
-            make(@"qqmusic", @"QQ Music", @"Line timing, Chinese catalog", SGQQMusicAsk),
-            make(@"kugou", @"KuGou", @"Word timing, Chinese catalog", SGKuGouAsk),
-            make(SGImportedLRCKey, @"Imported LRC", @"Your own .lrc files", SGImportedLRCAsk),
-            make(@"genius", @"Genius", @"Untimed, when no other has lyrics", SGGeniusAsk),
+            make(@"binilyrics", @"BiniLyrics", @"Đồng bộ từng từ từ Apple Music", SGBiniLyricsAsk),
+            make(@"musixmatch", @"Musixmatch", @"Danh mục lời được cấp phép của Spotify", SGMusixmatchAsk),
+            make(@"unison", @"Unison", @"Đồng bộ thủ công, ít bài hát", SGUnisonAsk),
+            make(@"netease", @"NetEase", @"Đồng bộ từng từ, có thể lược nội dung", SGNetEaseAsk),
+            make(@"lrclib", @"LRCLIB", @"Đồng bộ từng dòng, nguồn dự phòng mở", SGLrcLibAsk),
+            make(SGSpicyLyricsKey, @"Spicy Lyrics", @"Lời đồng bộ cộng đồng, cần khóa cá nhân", SGSpicyLyricsAsk),
+            make(@"qqmusic", @"QQ Music", @"Đồng bộ từng dòng, danh mục nhạc Trung Quốc", SGQQMusicAsk),
+            make(@"kugou", @"KuGou", @"Đồng bộ từng từ, danh mục nhạc Trung Quốc", SGKuGouAsk),
+            make(SGImportedLRCKey, @"Imported LRC", @"Tệp .lrc do bạn nhập", SGImportedLRCAsk),
+            make(@"genius", @"Genius", @"Lời không đồng bộ, chỉ dùng khi nguồn khác không có", SGGeniusAsk),
         ];
     });
     return all;

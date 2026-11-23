@@ -145,6 +145,19 @@ WATCH=(-w)
 cyan -i "$IN" -o "$OUT" -f "${FILES[@]}" -l "$OVERLAY" ${BUNDLE_ID:+-b "$BUNDLE_ID"} ${NAME:+-n "$NAME"} ${ICON:+-k "$ICON"} ${WATCH[@]+"${WATCH[@]}"} -s -u --overwrite
 rm -f "$OVERLAY"
 
+# cyan bundles .appex from EXT_DIR, but EXT_DIR/app is App Intents metadata,
+# NOT the Spotify.app resource directory. Put the developer portrait into the
+# final IPA's real host app so the scene-wide notch overlay can load it.
+if [ -n "${EXT_DIR:-}" ]; then
+  PORTRAIT="$ROOT/extension/LiveActivity/yanbi-avatar.jpg"
+  PATCH="$(mktemp -d)"
+  mkdir -p "$PATCH/$APP_DIR"
+  install -m 0644 "$PORTRAIT" "$PATCH/${APP_DIR}yanbi-avatar.jpg"
+  OUT_ABS="$(cd "$(dirname "$OUT")" && pwd)/$(basename "$OUT")"
+  (cd "$PATCH" && zip -q "$OUT_ABS" "${APP_DIR}yanbi-avatar.jpg")
+  rm -rf "$PATCH"
+fi
+
 if [ -n "$KEEP_WATCH" ]; then
   echo "==> keeping the Watch app, its arm64 build only (untested)"
   PATCH="$(mktemp -d)"

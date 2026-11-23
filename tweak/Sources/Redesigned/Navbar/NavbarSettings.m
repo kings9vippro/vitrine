@@ -13,23 +13,23 @@
 // The picker still asks the dispatcher about each one and leaves out what it has nowhere to send.
 static NSArray<NSDictionary *> *tabPresets(void) {
     return @[
-        @{SGTabTitle: @"Home", SGTabURI: @"spotify:home", SGTabIcon: @"home"},
-        @{SGTabTitle: @"Search", SGTabURI: @"spotify:search", SGTabIcon: @"search"},
-        @{SGTabTitle: @"Your Library", SGTabURI: @"spotify:collection", SGTabIcon: @"collection"},
-        @{SGTabTitle: @"Liked Songs", SGTabURI: @"spotify:collection:tracks", SGTabIcon: @"heart"},
-        @{SGTabTitle: @"Playlists", SGTabURI: @"spotify:playlists", SGTabIcon: @"playlist"},
-        @{SGTabTitle: @"Albums", SGTabURI: @"spotify:collection:albums", SGTabIcon: @"album"},
-        @{SGTabTitle: @"Artists", SGTabURI: @"spotify:collection:artists", SGTabIcon: @"artist"},
+        @{SGTabTitle: @"Trang chủ", SGTabURI: @"spotify:home", SGTabIcon: @"home"},
+        @{SGTabTitle: @"Tìm kiếm", SGTabURI: @"spotify:search", SGTabIcon: @"search"},
+        @{SGTabTitle: @"Thư viện", SGTabURI: @"spotify:collection", SGTabIcon: @"collection"},
+        @{SGTabTitle: @"Bài hát đã thích", SGTabURI: @"spotify:collection:tracks", SGTabIcon: @"heart"},
+        @{SGTabTitle: @"Danh sách phát", SGTabURI: @"spotify:playlists", SGTabIcon: @"playlist"},
+        @{SGTabTitle: @"Album", SGTabURI: @"spotify:collection:albums", SGTabIcon: @"album"},
+        @{SGTabTitle: @"Nghệ sĩ", SGTabURI: @"spotify:collection:artists", SGTabIcon: @"artist"},
         @{SGTabTitle: @"Podcasts", SGTabURI: @"spotify:collection:podcasts", SGTabIcon: @"podcasts"},
-        @{SGTabTitle: @"Audiobooks", SGTabURI: @"spotify:collection:audiobooks", SGTabIcon: @"audiobook"},
-        @{SGTabTitle: @"Downloads", SGTabURI: @"spotify:collection:downloads", SGTabIcon: @"downloaded"},
-        @{SGTabTitle: @"Your Episodes", SGTabURI: @"spotify:collection:your-episodes", SGTabIcon: @"bookmark"},
-        @{SGTabTitle: @"Browse", SGTabURI: @"spotify:browse", SGTabIcon: @"browse"},
-        @{SGTabTitle: @"New Releases", SGTabURI: @"spotify:new-releases", SGTabIcon: @"star"},
-        @{SGTabTitle: @"Made For You", SGTabURI: @"spotify:made-for-you", SGTabIcon: @"user"},
-        @{SGTabTitle: @"Concerts", SGTabURI: @"spotify:concerts", SGTabIcon: @"events"},
-        @{SGTabTitle: @"Queue", SGTabURI: @"spotify:now-playing:queue", SGTabIcon: @"queue"},
-        @{SGTabTitle: @"Create", SGTabURI: @"spotify:create-menu", SGTabIcon: @"plus"},
+        @{SGTabTitle: @"Sách nói", SGTabURI: @"spotify:collection:audiobooks", SGTabIcon: @"audiobook"},
+        @{SGTabTitle: @"Đã tải", SGTabURI: @"spotify:collection:downloads", SGTabIcon: @"downloaded"},
+        @{SGTabTitle: @"Tập của bạn", SGTabURI: @"spotify:collection:your-episodes", SGTabIcon: @"bookmark"},
+        @{SGTabTitle: @"Khám phá", SGTabURI: @"spotify:browse", SGTabIcon: @"browse"},
+        @{SGTabTitle: @"Phát hành mới", SGTabURI: @"spotify:new-releases", SGTabIcon: @"star"},
+        @{SGTabTitle: @"Dành cho bạn", SGTabURI: @"spotify:made-for-you", SGTabIcon: @"user"},
+        @{SGTabTitle: @"Buổi diễn", SGTabURI: @"spotify:concerts", SGTabIcon: @"events"},
+        @{SGTabTitle: @"Hàng chờ", SGTabURI: @"spotify:now-playing:queue", SGTabIcon: @"queue"},
+        @{SGTabTitle: @"Tạo", SGTabURI: @"spotify:create-menu", SGTabIcon: @"plus"},
     ];
 }
 
@@ -138,7 +138,7 @@ typedef NS_ENUM(NSInteger, SGRSplitSection) {
 
 - (instancetype)init {
     if (!(self = [super initWithStyle:UITableViewStyleInsetGrouped])) return nil;
-    self.title = @"Split Tabs";
+    self.title = @"Tách tab";
     return self;
 }
 
@@ -190,8 +190,8 @@ typedef NS_ENUM(NSInteger, SGRSplitSection) {
 }
 
 - (NSString *)headerFor:(NSInteger)section {
-    if (section == SGRSplitSectionApart) return _split.count ? @"Apart, on the right" : nil;
-    if (section == SGRSplitSectionStock) return _stock.count ? @"Spotify's tabs" : nil;
+    if (section == SGRSplitSectionApart) return _split.count ? @"Riêng bên phải" : nil;
+    if (section == SGRSplitSectionStock) return _stock.count ? @"Tab của Spotify" : nil;
     return nil;
 }
 
@@ -222,10 +222,10 @@ typedef NS_ENUM(NSInteger, SGRSplitSection) {
         content.imageProperties.maximumSize = CGSizeMake(24, 24);
         content.imageProperties.reservedLayoutSize = CGSizeMake(28, 28);
         cell.contentConfiguration = content;
-        cell.accessibilityHint = entry[SGRNavbarURI] ? @"Opens the tab to edit it" : nil;
+        cell.accessibilityHint = entry[SGRNavbarURI] ? @"Mở tab để chỉnh sửa" : nil;
     } else {
         SGFillCell(cell, _stock[(NSUInteger)path.row], nil, nil, nil);
-        cell.accessibilityHint = @"Moves the tab to the right end of the bar";
+        cell.accessibilityHint = @"Chuyển tab sang bên phải";
     }
     return cell;
 }
@@ -361,7 +361,7 @@ static const CGFloat kPlatterInset = 21, kApartItemWidth = 62, kPlatterGap = 12;
     [self addSubview:_main];
     [self addSubview:_apart];
     self.isAccessibilityElement = YES;
-    self.accessibilityLabel = @"Tab bar preview";
+    self.accessibilityLabel = @"Xem trước thanh điều hướng";
     return self;
 }
 
@@ -615,8 +615,8 @@ typedef NS_ENUM(NSInteger, SGRNavbarSection) {
     _header = [UIView new];
     [_header addSubview:_preview];
     self.tableView.tableHeaderView = _header;
-    _withNames = [[SGRLabelCard alloc] initWithTitle:@"Icons and names" names:YES];
-    _iconsOnly = [[SGRLabelCard alloc] initWithTitle:@"Icons only" names:NO];
+    _withNames = [[SGRLabelCard alloc] initWithTitle:@"Biểu tượng và tên" names:YES];
+    _iconsOnly = [[SGRLabelCard alloc] initWithTitle:@"Chỉ biểu tượng" names:NO];
     for (SGRLabelCard *card in @[_withNames, _iconsOnly]) [card addTarget:self action:@selector(labelsPicked:) forControlEvents:UIControlEventTouchUpInside];
     _entries = navbarEntries();
     [self showChoices];
@@ -682,7 +682,7 @@ typedef NS_ENUM(NSInteger, SGRNavbarSection) {
 }
 
 - (NSString *)headerFor:(NSInteger)section {
-    return section == SGRNavbarSectionTabs ? @"Tabs" : nil;
+    return section == SGRNavbarSectionTabs ? @"Các tab" : nil;
 }
 
 - (NSString *)footerFor:(NSInteger)section {
@@ -742,7 +742,7 @@ typedef NS_ENUM(NSInteger, SGRNavbarSection) {
     SGRTabCell *cell = [table dequeueReusableCellWithIdentifier:@"tab"] ?: [[SGRTabCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"tab"];
     NSDictionary *entry = _entries[(NSUInteger)path.row];
     BOOL hidden = [entry[SGRNavbarHidden] boolValue];
-    SGFillCell(cell, entry[SGRNavbarTitle], [splitStockIDs() containsObject:entry[SGRNavbarID]] ? @"Apart, on the right" : nil, hidden ? SGGrey() : nil, nil);
+    SGFillCell(cell, entry[SGRNavbarTitle], [splitStockIDs() containsObject:entry[SGRNavbarID]] ? @"Riêng bên phải" : nil, hidden ? SGGrey() : nil, nil);
     UIListContentConfiguration *content = (UIListContentConfiguration *)cell.contentConfiguration;
     content.image = glyphFor(entry, NO);
     content.imageProperties.tintColor = hidden ? SGGrey() : UIColor.whiteColor;
@@ -755,8 +755,8 @@ typedef NS_ENUM(NSInteger, SGRNavbarSection) {
     cell.contentConfiguration = content;
     cell.separatorInset = UIEdgeInsetsMake(0, 52, 0, 0);
     cell.selectionStyle = UITableViewCellSelectionStyleDefault;
-    cell.accessibilityValue = hidden ? @"Hidden" : @"Shown";
-    cell.accessibilityHint = entry[SGRNavbarURI] ? @"Opens the tab to edit it" : @"Shows or hides the tab";
+    cell.accessibilityValue = hidden ? @"Đã ẩn" : @"Đang hiện";
+    cell.accessibilityHint = entry[SGRNavbarURI] ? @"Mở tab để chỉnh sửa" : @"Ẩn hoặc hiện tab";
 
     if (!cell.check) {
         cell.check = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -766,7 +766,7 @@ typedef NS_ENUM(NSInteger, SGRNavbarSection) {
     UIImageSymbolConfiguration *size = [UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIImageSymbolWeightRegular];
     [cell.check setImage:[UIImage systemImageNamed:hidden ? @"circle" : @"checkmark.circle.fill" withConfiguration:size] forState:UIControlStateNormal];
     cell.check.tintColor = hidden ? SGGrey() : SGRAccent();
-    cell.check.accessibilityLabel = [NSString stringWithFormat:@"Show %@ on the bar", entry[SGRNavbarTitle]];
+    cell.check.accessibilityLabel = [NSString stringWithFormat:@"Hiện %@ trên thanh điều hướng", entry[SGRNavbarTitle]];
     cell.check.accessibilityValue = hidden ? @"Off" : @"On";
     return cell;
 }
@@ -778,7 +778,7 @@ typedef NS_ENUM(NSInteger, SGRNavbarSection) {
     switch (path.section) {
         case SGRNavbarSectionSwitch: {
             if (path.row == 1) {
-                SGFillCell(cell, @"Tabs in the accent", @"Every tab's icon and name; white when off", nil, nil);
+                SGFillCell(cell, @"Các tab có màu nhấn", @"Biểu tượng và tên tab; khi tắt dùng màu trắng", nil, nil);
                 UISwitch *toggle = [UISwitch new];
                 toggle.onTintColor = SGGreen();
                 toggle.on = SGFlag(SGRKeyTabAccent, NO);
@@ -786,7 +786,7 @@ typedef NS_ENUM(NSInteger, SGRNavbarSection) {
                 cell.accessoryView = toggle;
                 break;
             }
-            SGFillCell(cell, @"Custom tab bar", @"Your order, hidden tabs and tabs you add", nil, nil);
+            SGFillCell(cell, @"Tùy chỉnh thanh điều hướng", @"Thứ tự tùy chỉnh, tab đã ẩn và tab thêm vào", nil, nil);
             UISwitch *toggle = [UISwitch new];
             toggle.onTintColor = SGGreen();
             toggle.on = SGEnabled(SGRKeyNavbar);
@@ -796,12 +796,12 @@ typedef NS_ENUM(NSInteger, SGRNavbarSection) {
         }
         case SGRNavbarSectionLinks:
             // Links in the accent color, as the system's own actions in a list are.
-            SGFillCell(cell, path.row == 0 ? @"Add a tab" : @"Use Spotify's tabs", nil, SGRAccent(), nil);
+            SGFillCell(cell, path.row == 0 ? @"Add a tab" : @"Dùng tab của Spotify", nil, SGRAccent(), nil);
             cell.selectionStyle = UITableViewCellSelectionStyleDefault;
             cell.accessibilityTraits = UIAccessibilityTraitButton;
             break;
         default:
-            SGFillCell(cell, @"Split tabs", @"Place chosen tabs apart on the right", nil, @"rectangle.split.2x1");
+            SGFillCell(cell, @"Tách các tab", @"Đưa các tab đã chọn sang bên phải", nil, @"rectangle.split.2x1");
             cell.accessoryView = SGSymbolView(@"chevron.right", 13, UIImageSymbolWeightSemibold, 16);
             cell.selectionStyle = UITableViewCellSelectionStyleDefault;
             break;
@@ -935,11 +935,11 @@ typedef NS_ENUM(NSInteger, SGRNavbarSection) {
 }
 
 - (void)reset {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Use Spotify's tabs"
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Dùng tab của Spotify"
                                                                   message:@"Every tab of Spotify's comes back where Spotify put it, the tabs you added go, and no tab is split apart."
                                                            preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Reset" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+    [alert addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Đặt lại" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         SGRSetNavbarLayout(@[]);
         SGRSetNavbarSplit(@[]);
         SGRRefreshTabBar();

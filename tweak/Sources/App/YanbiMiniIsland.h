@@ -1,6 +1,9 @@
-// Vitrine-only mini player for notch iPhones. It is not a system Dynamic Island.
+// Shared overlay for the Spotify application scene; never a system Dynamic Island.
 #import <UIKit/UIKit.h>
 
-@interface SGYanbiMiniIslandView : UIView
-- (void)setActive:(BOOL)active;
-@end
+#define SGKeyYanbiMiniIsland @"spotifyglass.vitrine.miniIsland"
+
+// Call on the main thread after Spotify's UIKit startup is available.
+void SGYanbiIslandInstall(void);
+// Re-read the switch and current scene without restarting Spotify.
+void SGYanbiIslandRefresh(void);

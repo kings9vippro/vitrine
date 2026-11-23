@@ -28,17 +28,17 @@ static void tell(NSString *title, NSString *message) {
 
 static void ask(NSString *title, NSString *message, NSString *action, BOOL destructive, void (^then)(void)) {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
     [alert addAction:[UIAlertAction actionWithTitle:action style:destructive ? UIAlertActionStyleDestructive : UIAlertActionStyleDefault
                                             handler:^(UIAlertAction *a) { then(); }]];
     [SGTopController() presentViewController:alert animated:YES completion:nil];
 }
 
 NSString *SGSingLevelText(double level) {
-    if (level <= 0.001) return @"Gone";
+    if (level <= 0.001) return @"Không còn";
     if (level < 0.999) return [NSString stringWithFormat:@"%.0f%%", level * 100];
-    if (level <= 1.001) return @"As sung";
-    if (level >= 1.999) return @"Vocals only";
+    if (level <= 1.001) return @"Giọng gốc";
+    if (level >= 1.999) return @"Chỉ giọng hát";
     return [NSString stringWithFormat:@"Backing %.0f%%", (2 - level) * 100];
 }
 
@@ -54,18 +54,18 @@ static SGSingModelState rowState(void) {
 }
 
 static NSString *modelValue(void) {
-    if (!SGSingOSSupported()) return @"Unavailable";
+    if (!SGSingOSSupported()) return @"Không khả dụng";
     BOOL update = SGSingModelUpdateAvailable();
     switch (rowState()) {
         case SGSingModelDownloading:
-            if (SGSingModelChecking()) return @"Checking…";
-            if (SGSingModelWaitingForNetwork()) return SGSingModelOverCellular() ? @"Waiting for the network" : @"Waiting for Wi-Fi";
+            if (SGSingModelChecking()) return @"Đang kiểm tra…";
+            if (SGSingModelWaitingForNetwork()) return SGSingModelOverCellular() ? @"Đang chờ kết nối mạng" : @"Đang chờ Wi-Fi";
             return [NSString stringWithFormat:@"%.0f%%", SGSingModelProgress() * 100];
         case SGSingModelReady: return [NSString stringWithFormat:@"Downloaded · %@", SGSingModelSizeText()];
         case SGSingModelMissing:
-            if (SGSingModelError()) return update ? @"Update failed, try again" : @"Failed, try again";
+            if (SGSingModelError()) return update ? @"Cập nhật thất bại, hãy thử lại" : @"Thất bại, hãy thử lại";
             if (SGSingModelPausedBytes()) {
-                return [NSString stringWithFormat:@"%@ · %@ of %@", update ? @"Update paused" : @"Paused", bytes(SGSingModelPausedBytes()), SGSingModelSizeText()];
+                return [NSString stringWithFormat:@"%@ · %@ of %@", update ? @"Đã tạm dừng cập nhật" : @"Đã tạm dừng", bytes(SGSingModelPausedBytes()), SGSingModelSizeText()];
             }
             return [NSString stringWithFormat:update ? @"Update available · %@" : @"Download, %@", SGSingModelSizeText()];
     }
@@ -90,21 +90,21 @@ static void modelTapped(UITableViewController *page) {
                     : @"\n\nKaraoke is tested on the iPhone 15 Pro. On iPhones older than the iPhone 12 it may not keep up; the light model has a better chance."];
             }
             NSString *title = SGSingModelPausedBytes() ? (update ? @"Carry on with the update?" : @"Carry on with the download?")
-                                                       : (update ? @"Download the update?" : @"Download the voice model?");
-            ask(title, message, @"Download", NO, ^{ SGSingDownloadModel(); });
+                                                       : (update ? @"Tải bản cập nhật?" : @"Tải mô hình giọng hát?");
+            ask(title, message, @"Tải xuống", NO, ^{ SGSingDownloadModel(); });
             break;
         }
         case SGSingModelDownloading:
             if (SGSingModelWaitingForNetwork() && !SGSingModelOverCellular()) {
-                ask(@"Download over cellular?", [NSString stringWithFormat:@"The download waits for Wi-Fi. Over cellular or a Low Data Mode network it uses up to %@ of your plan.",
-                                                 SGSingModelSizeText()], @"Use cellular", NO, ^{ SGSingDownloadModelOverCellular(); });
+                ask(@"Tải bằng mạng di động?", [NSString stringWithFormat:@"The download waits for Wi-Fi. Over cellular or a Low Data Mode network it uses up to %@ of your plan.",
+                                                 SGSingModelSizeText()], @"Dùng dữ liệu di động", NO, ^{ SGSingDownloadModelOverCellular(); });
                 break;
             }
-            ask(@"Stop the download?", @"What has come in is kept, so the next download carries on from it.", @"Stop", YES, ^{ SGSingCancelModelDownload(); });
+            ask(@"Dừng tải xuống?", @"What has come in is kept, so the next download carries on from it.", @"Dừng", YES, ^{ SGSingCancelModelDownload(); });
             break;
         case SGSingModelReady:
-            ask(@"Delete the voice model?", [NSString stringWithFormat:@"It frees %@. Karaoke needs it again to turn the vocals down.", SGSingModelInUseSizeText()],
-                @"Delete", YES, ^{
+            ask(@"Xóa mô hình giọng hát?", [NSString stringWithFormat:@"It frees %@. Karaoke needs it again to turn the vocals down.", SGSingModelInUseSizeText()],
+                @"Xóa", YES, ^{
                     SGSetSingOn(NO);
                     SGSingDeleteModel();
                     // Sing's switch goes off with it.
@@ -141,29 +141,29 @@ static void modelTapped(UITableViewController *page) {
 @end
 
 UIViewController *SGSpatialVoiceSettingsPage(void) {
-    SGModRow *spatial = SGOptionRow(@"Spatial voice", nil, SGKeySingSpatial);
+    SGModRow *spatial = SGOptionRow(@"Giọng hát không gian", nil, SGKeySingSpatial);
     __block __weak SGSpatialVoicePage *page;
     spatial.changed = ^(BOOL on) {
         SGSetSingSpatial(on);
         [page.preview refresh];
     };
-    SGSpatialVoicePage *made = [[SGSpatialVoicePage alloc] initWithTitle:@"Spatial voice" intro:nil sections:@[
+    SGSpatialVoicePage *made = [[SGSpatialVoicePage alloc] initWithTitle:@"Giọng hát không gian" intro:nil sections:@[
         SGNotedSection(nil, @[spatial],
                        @"The singer's voice keeps its place in front of you as you turn your head, while the rest of the song turns with "
                        @"you; stay turned, and it comes round in front again. It follows your head through headphones that "
                        @"track it: AirPods Pro, AirPods 3 or later, AirPods Max, and asks for Motion & Fitness the first time. "
                        @"While iOS's own Spatialize Stereo is on, which already holds the whole song in place, the voice is left to it."),
-        SGNotedSection(@"Sound", @[
-            SGSliderRow(@"Distance", nil, 1, 6.5, 0.5, ^double { return SGSingSpatialDistance(); }, ^(double value) {
+        SGNotedSection(@"Âm thanh", @[
+            SGSliderRow(@"Khoảng cách", nil, 1, 6.5, 0.5, ^double { return SGSingSpatialDistance(); }, ^(double value) {
                 SGSetSingSpatialSound(value, SGSingSpatialRoom(), SGSingSpatialFront(), SGSingSpatialWidth());
             }, ^NSString *(double value) { return [NSString stringWithFormat:@"%.1f m", value]; }),
-            SGSliderRow(@"Room", nil, 0, 100, 5, ^double { return SGSingSpatialRoom(); }, ^(double value) {
+            SGSliderRow(@"Không gian", nil, 0, 100, 5, ^double { return SGSingSpatialRoom(); }, ^(double value) {
                 SGSetSingSpatialSound(SGSingSpatialDistance(), value, SGSingSpatialFront(), SGSingSpatialWidth());
             }, ^NSString *(double value) { return [NSString stringWithFormat:@"%.0f%%", value]; }),
             SGSliderRow(@"Back in front", nil, 5, 60, 1, ^double { return SGSingSpatialFront(); }, ^(double value) {
                 SGSetSingSpatialSound(SGSingSpatialDistance(), SGSingSpatialRoom(), value, SGSingSpatialWidth());
             }, ^NSString *(double value) { return [NSString stringWithFormat:@"After %.0f s", value]; }),
-            SGSliderRow(@"Instruments width", nil, 0, 200, 5, ^double { return SGSingSpatialWidth(); }, ^(double value) {
+            SGSliderRow(@"Độ rộng nhạc cụ", nil, 0, 200, 5, ^double { return SGSingSpatialWidth(); }, ^(double value) {
                 SGSetSingSpatialSound(SGSingSpatialDistance(), SGSingSpatialRoom(), SGSingSpatialFront(), value);
             }, ^NSString *(double value) { return [NSString stringWithFormat:@"%.0f%%", value]; }),
         ], @"How far ahead the voice sings, and how much of the room you hear around it: farther, the voice is quieter and "
@@ -210,22 +210,22 @@ UIViewController *SGSingSettingsPage(void) {
     SGModRow *sing = SGOptionRow(@"Karaoke", nil, SGKeySing);
     sing.changed = ^(BOOL on) { SGSetSingOn(on); };
     // Only the redesign's lyrics have the mic.
-    SGModRow *button = SGSwitchRow(@"Toggle from lyrics", @"The mic in the corner of the lyrics", SGKeySingButton);
+    SGModRow *button = SGSwitchRow(@"Bật từ trang lời bài hát", @"Nút micro ở góc trang lời bài hát", SGKeySingButton);
     button.defaultOn = SGSingOSSupported();
     button.changed = ^(BOOL on) { [NSNotificationCenter.defaultCenter postNotificationName:SGSingButtonDidChangeNotification object:nil]; };
     button.visible = ^BOOL { return SGRedesignedUIStored(); };
-    SGModRow *heat = SGOptionRow(@"Ignore heat warnings", @"Keeps Karaoke going on a hot iPhone, which then gets hotter", SGKeySingIgnoreHeat);
-    SGModRow *memory = SGOptionRow(@"Ignore memory warnings", @"Keeps Karaoke going when iOS is low on memory, which may then close Spotify",
+    SGModRow *heat = SGOptionRow(@"Bỏ qua cảnh báo nhiệt", @"Keeps Karaoke going on a hot iPhone, which then gets hotter", SGKeySingIgnoreHeat);
+    SGModRow *memory = SGOptionRow(@"Bỏ qua cảnh báo bộ nhớ", @"Keeps Karaoke going when iOS is low on memory, which may then close Spotify",
                                    SGKeySingIgnoreMemory);
     heat.changed = ^(BOOL on) { SGSetSingIgnoresHeat(on); };
     __block __weak SGModPage *page;
     SGModRow *model = SGStatActionRow(@"Voice model", nil, ^NSString *{ return modelValue(); }, ^{ modelTapped(page); });
-    SGModRow *remove = SGActionRow(@"Remove voice model", nil, ^{
+    SGModRow *remove = SGActionRow(@"Xóa mô hình giọng hát", nil, ^{
         BOOL partial = SGSingModelCurrentState() != SGSingModelReady;
-        ask(partial ? @"Remove the paused download?" : @"Remove the voice model?",
+        ask(partial ? @"Xóa dữ liệu tải đang tạm dừng?" : @"Xóa mô hình giọng hát?",
             partial ? [NSString stringWithFormat:@"It frees %@. A new download starts from the beginning.", bytes(SGSingModelPausedBytes())]
                     : [NSString stringWithFormat:@"It frees %@. Karaoke needs it again to turn the vocals down.", SGSingModelInUseSizeText()],
-            @"Remove", YES, ^{
+            @"Xóa", YES, ^{
                 SGSetSingOn(NO);
                 SGSingDeleteModel();
                 [page.tableView reloadData];
@@ -244,31 +244,31 @@ UIViewController *SGSingSettingsPage(void) {
             };
             BOOL downloading = SGSingModelCurrentState() == SGSingModelDownloading || SGSingModelUpdateDownloading();
             if (!downloading) choose();
-            else ask(@"Stop the download?", @"The voice model coming in stops, and what has come in is kept for when you choose it again.", @"Switch", NO, choose);
+            else ask(@"Dừng tải xuống?", @"The voice model coming in stops, and what has come in is kept for when you choose it again.", @"Chuyển", NO, choose);
         });
         row.checked = ^BOOL { return SGSingChosenModel() == kind; };
         return row;
     };
-    SGModRow *full = choice(@"Best quality", @"The full model, %@: the cleanest result, for recent iPhones", SGSingModelFull);
-    SGModRow *light = choice(@"Light", @"A small model, %@, for older iPhones: more of the voice is left in, and the music dips under it",
+    SGModRow *full = choice(@"Chất lượng cao nhất", @"The full model, %@: the cleanest result, for recent iPhones", SGSingModelFull);
+    SGModRow *light = choice(@"Nhẹ", @"A small model, %@, for older iPhones: more of the voice is left in, and the music dips under it",
                              SGSingModelLight);
-    SGModRow *other = SGStatActionRow(@"Remove the other model", nil, ^NSString *{ return bytes(SGSingOtherModelBytes()); }, ^{
-        NSString *name = SGSingChosenModel() == SGSingModelFull ? @"Light" : @"Best quality";
-        ask(@"Remove the other model?", [NSString stringWithFormat:@"%@ is not in use. Removing it frees %@, and choosing it again downloads it again.",
+    SGModRow *other = SGStatActionRow(@"Xóa mô hình còn lại", nil, ^NSString *{ return bytes(SGSingOtherModelBytes()); }, ^{
+        NSString *name = SGSingChosenModel() == SGSingModelFull ? @"Nhẹ" : @"Chất lượng cao nhất";
+        ask(@"Xóa mô hình còn lại?", [NSString stringWithFormat:@"%@ is not in use. Removing it frees %@, and choosing it again downloads it again.",
                                          name, bytes(SGSingOtherModelBytes())],
-            @"Remove", YES, ^{
+            @"Xóa", YES, ^{
                 SGSingDeleteOtherModel();
                 [page refreshVisibility];
             });
     });
     other.color = SGRed();
     other.visible = ^BOOL { return SGSingOtherModelBytes() > 0; };
-    SGModRow *spatial = SGPageRow(@"Spatial voice", ^UIViewController *{ return SGSpatialVoiceSettingsPage(); });
+    SGModRow *spatial = SGPageRow(@"Giọng hát không gian", ^UIViewController *{ return SGSpatialVoiceSettingsPage(); });
     spatial.subtitle = @"With AirPods, the voice stays in front of you as you turn your head";
     spatial.value = ^NSString *{ return SGSingSpatial() ? @"On" : @"Off"; };
     // Facts about the iPhone, which do not change while the page shows.
     spatial.visible = ^BOOL { return SGSingSpatialAvailable(); };
-    SGModRow *units = SGChoiceRow(@"Runs on", nil, SGKeySingComputeUnits, SGSingComputeUnitNames(), 0);
+    SGModRow *units = SGChoiceRow(@"Chạy bằng", nil, SGKeySingComputeUnits, SGSingComputeUnitNames(), 0);
     units.choiceNotes = @[@"The Neural Engine, the fastest, with the CPU while it loads", @"Slower and warmer, and a little less memory"];
     units.choiceFooter = @"Karaoke loads the voice model on the CPU first and starts with it. On Automatic a second copy then loads on "
                          @"the Neural Engine and takes over, in the background too. The iPhone prepares it the first time after Vitrine "
@@ -276,7 +276,7 @@ UIViewController *SGSingSettingsPage(void) {
                          @"updates did it already. If it does not load, "
                          @"Karaoke stays on the CPU until Spotify is opened again.";
     units.chosen = ^(NSInteger index) { SGSingComputeUnitsChanged(); };
-    SGModRow *prepare = SGSwitchRow(@"Prepare after updates",
+    SGModRow *prepare = SGSwitchRow(@"Chuẩn bị sau khi cập nhật",
                                     @"Readies the Neural Engine in the background after Vitrine or iOS updates, so Karaoke starts at full speed", SGKeySingPrepareAhead);
     SGSingPage *made = [[SGSingPage alloc] initWithTitle:@"Karaoke" intro:nil sections:@[
         SGSection(nil, @[sing, button, heat, memory]),
@@ -284,7 +284,7 @@ UIViewController *SGSingSettingsPage(void) {
                        @"Each model is downloaded and kept on its own, and Karaoke needs only the chosen one. A switch takes effect "
                        @"without restarting Spotify: the model loads in a few seconds, and the song plays as it is until it is in."),
         SGSection(nil, @[spatial]),
-        SGNotedSection(@"Advanced", @[units, prepare],
+        SGNotedSection(@"Nâng cao", @[units, prepare],
                        @"Karaoke turns a song's vocals down to sing over, or the rest down to hear the vocals alone, with a voice model that "
                        @"runs only on this iPhone: no audio leaves it. It listens a few seconds ahead of what plays, so the vocals change a "
                        @"few seconds after a song starts or after a seek."),
