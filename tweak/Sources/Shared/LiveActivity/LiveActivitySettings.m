@@ -92,7 +92,7 @@ UIViewController *SGLiveActivitySettingsPage(void) {
     on.changed = ^(BOOL value) { SGSetLiveActivityEnabled(value); };
     SGModRow *view = SGChoiceRow(@"Hiển thị", nil, SGKeyLiveActivityView, viewNames(), SGLiveActivityLyrics);
     // The lyrics view's own rows, shown while it is picked.
-    SGModRow *without = menuRow(@"Khi không có lời", SGKeyLiveActivityWithoutLyrics, @[@"Nốt nhạc", @"Tên bài hát"], SGLiveActivityWithoutLyricsNote, preview);
+    SGModRow *without = menuRow(@"Khi không có lời", SGKeyLiveActivityWithoutLyrics, @[@"Nốt nhạc", @"Tên bài hát"], SGLiveActivityWithoutLyricsTrack, preview);
     SGModRow *alignment = menuRow(@"Căn chỉnh", SGKeyLiveActivityAlignment, @[@"Trái", @"Giữa"], SGLiveActivityAlignCenter, preview);
     SGModRow *translation = SGOptionRow(@"Bản dịch", @"Hiện bản dịch ngay dưới lời bài hát", SGKeyLiveActivityTranslation);
     translation.changed = switched;
