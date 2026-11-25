@@ -12,6 +12,16 @@ UIVisualEffect *SGGlassEffect(void) {
     return [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemChromeMaterialDark];
 }
 
+BOOL SGYanbiFastGlass(void) {
+    static BOOL fast;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        if (@available(iOS 26.0, *)) return;
+        fast = SGFlag(SGKeyYanbiFastGlass, YES);
+    });
+    return fast;
+}
+
 // Read once: the switch, like every switch, takes effect at the next launch. The redesign's only: the native look
 // never draws legacy glass.
 BOOL SGUseLegacyGlass(void) {
@@ -26,7 +36,12 @@ BOOL SGUseLegacyGlass(void) {
 
 static UIView *newPane(void) {
     UIView *glass;
-    if (SGUseLegacyGlass()) {
+    if (SGYanbiFastGlass()) {
+        glass = [[UIVisualEffectView alloc] initWithEffect:nil];
+        glass.backgroundColor = [UIColor colorWithWhite:0.13 alpha:0.94];
+        glass.layer.borderWidth = 0.5;
+        glass.layer.borderColor = [UIColor colorWithWhite:1 alpha:0.13].CGColor;
+    } else if (SGUseLegacyGlass()) {
         glass = [[SGLegacyGlassView alloc] initWithFrame:CGRectZero];
     } else {
         glass = [[UIVisualEffectView alloc] initWithEffect:SGGlassEffect()];
