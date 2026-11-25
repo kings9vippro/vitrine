@@ -71,13 +71,16 @@ static UIViewController *modSettingsPage(void) {
     [sections addObject:SGSection(nil, @[addonUpdate])];
 
     SGModRow *miniIsland = SGSwitchRow(@"Thanh nhạc nổi Yanbi",
-        @"Tự căn dưới tai thỏ, hiện trên mọi trang Spotify và trong ảnh chụp. Máy Dynamic Island dùng thẻ nhạc iOS.", SGKeyYanbiMiniIsland);
+        @"Tự căn sát mép trên theo nhóm iPhone; Dynamic Island thật do iOS quản lý.", SGKeyYanbiMiniIsland);
     miniIsland.changed = ^(BOOL on) { SGYanbiIslandRefresh(); };
+    SGModRow *fastGlass = SGSwitchRow(@"Kính nhẹ • mượt hơn", @"Giảm blur và khúc xạ trên iOS cũ. Khởi động lại để áp dụng.", SGKeyYanbiFastGlass);
+    fastGlass.visible = ^BOOL { return !SGRedesignAvailable(); };
 
     // The tile colors are the system palette's, in dark mode except where SGColorRGB gives a lighter or deeper shade.
     [sections addObject:SGNotedSection(nil, @[
         SGRedesignedUIRow(),
         miniIsland,
+        fastGlass,
         pageRow(@"Giao diện", @"paintpalette.fill", UIColor.systemPurpleColor, ^UIViewController *{ return SGAppearancePage(); }),
         pageRow(@"Thanh điều hướng", @"rectangle.bottomthird.inset.filled", UIColor.systemGrayColor, ^UIViewController *{ return SGNavbarPage(); }),
     ], SGRestartNote)];

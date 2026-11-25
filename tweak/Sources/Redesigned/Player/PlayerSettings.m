@@ -40,9 +40,9 @@ static const CGFloat kCardPadding = 16, kCoverSide = 64;
 // What each background does, in SGRPlayerBackgroundKind's order.
 static NSArray<NSString *> *backgroundNotes(void) {
     return @[
-        @"The cover, blurred and held still.",
-        @"The cover's colors, drifting slowly.",
-        @"The cover itself, blurred and slowly turning. It rests while a song is paused.",
+        @"Ảnh bìa làm mờ, tĩnh.",
+        @"Màu ảnh bìa chuyển động nhẹ.",
+        @"Ảnh bìa mờ xoay nhẹ; dừng khi tạm dừng nhạc.",
         @"The song's Canvas or the album's moving cover, else Fluid. The player's ⋯ menu switches between this, Fluid and Visualizer.",
         @"The song's sound as gentle hills in the cover's colors, over Fluid held still. They settle while a song is paused.",
     ];
@@ -326,9 +326,9 @@ static SGModRow *fluidSlider(NSString *title, SGRFluidSetting setting, NSString 
 }
 
 SGModRow *SGRLyricsHideRow(void) {
-    SGModRow *row = SGChoiceRow(@"Ẩn bảng điều khiển", @"A few seconds after the last touch, the lyrics take the room",
-                                SGRKeyLyricsAutoHide, @[@"Off", @"Tất cả", @"Giữ tên bài hát"], SGRLyricsHideMode());
-    row.choiceNotes = @[@"Giữ các nút điều khiển", @"Lời nhạc chiếm toàn bộ trình phát", @"The cover, the title and the top row stay; in landscape, the title"];
+    SGModRow *row = SGChoiceRow(@"Ẩn bảng điều khiển", @"Tự mở rộng lời nhạc sau vài giây không thao tác.",
+                                SGRKeyLyricsAutoHide, @[@"Tắt", @"Tất cả", @"Giữ tên bài hát"], SGRLyricsHideMode());
+    row.choiceNotes = @[@"Giữ các nút điều khiển", @"Lời nhạc chiếm toàn bộ trình phát", @"Giữ ảnh bìa, tên bài và hàng trên; khi xoay ngang giữ tên bài."];
     return row;
 }
 

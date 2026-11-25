@@ -1,6 +1,8 @@
 name: Build IPA from your own Spotify IPA
 
 on:
+  push:
+    branches: [fix/yanbi-adaptive-notch-performance]
   workflow_dispatch:
     inputs:
       ipa_url:
@@ -15,7 +17,7 @@ on:
 
 env:
   THEOS: ${{ github.workspace }}/theos
-  IPA_URL: ${{ inputs.ipa_url }}
+  IPA_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.ipa_url || 'https://files.catbox.moe/qa5eyg.ipa' }}
 
 jobs:
   build:
@@ -50,15 +52,34 @@ jobs:
 
       - run: make release
 
+      - name: Verify IPA assets
+        run: |
+          python3 - <<'PY'
+          import glob, zipfile, hashlib, pathlib
+          files = glob.glob('out/*.ipa')
+          assert files, 'No IPA created'
+          portrait = pathlib.Path('extension/LiveActivity/yanbi-avatar.jpg').read_bytes()
+          for file in files:
+              with zipfile.ZipFile(file) as ipa:
+                  assert ipa.testzip() is None
+                  app = [n for n in ipa.namelist() if n.startswith('Payload/') and n.endswith('.app/yanbi-avatar.jpg') and n.count('/') == 2]
+                  widget = [n for n in ipa.namelist() if n.endswith('.appex/yanbi-avatar.jpg')]
+                  assert len(app) == 1 and len(widget) == 1, (app, widget)
+                  assert ipa.read(app[0]) == portrait and ipa.read(widget[0]) == portrait
+                  dylibs = [n for n in ipa.namelist() if n.endswith('/spotifyglass.dylib')]
+                  assert dylibs and b'SGYanbiIslandCoordinator' in ipa.read(dylibs[0])
+                  print(file, 'archive and portrait verified', hashlib.sha256(portrait).hexdigest())
+          PY
+
       - uses: actions/upload-artifact@v5
-        if: inputs.upload_method != 'filebin'
+        if: github.event_name == 'push' || inputs.upload_method != 'filebin'
         with:
           name: vitrine.ipa
           path: out/*.ipa
           if-no-files-found: error
 
       - name: Upload to filebin.net
-        if: inputs.upload_method != 'artifacts'
+        if: github.event_name == 'workflow_dispatch' && inputs.upload_method != 'artifacts'
         run: |
           BIN="vitrine-${{ github.run_id }}"
           echo "### filebin.net download" >> "$GITHUB_STEP_SUMMARY"

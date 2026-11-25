@@ -408,7 +408,7 @@ static NSString *stepName(NSInteger view, NSInteger step) {
     return (Look){
         .view = _view,
         .textSize = SGInt(SGKeyLiveActivityTextSize, SGLiveActivityTextMedium),
-        .withoutLyrics = SGInt(SGKeyLiveActivityWithoutLyrics, SGLiveActivityWithoutLyricsNote),
+        .withoutLyrics = SGInt(SGKeyLiveActivityWithoutLyrics, SGLiveActivityWithoutLyricsTrack),
         .colors = colors,
         .centered = SGInt(SGKeyLiveActivityAlignment, SGLiveActivityAlignCenter) == SGLiveActivityAlignCenter,
         .translation = SGFlag(SGKeyLiveActivityTranslation, NO),

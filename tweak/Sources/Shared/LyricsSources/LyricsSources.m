@@ -200,7 +200,7 @@ NSArray<SGLyricsProvider *> *SGLyricsAllProviders(void) {
             make(SGSpicyLyricsKey, @"Spicy Lyrics", @"Lời đồng bộ cộng đồng, cần khóa cá nhân", SGSpicyLyricsAsk),
             make(@"qqmusic", @"QQ Music", @"Đồng bộ từng dòng, danh mục nhạc Trung Quốc", SGQQMusicAsk),
             make(@"kugou", @"KuGou", @"Đồng bộ từng từ, danh mục nhạc Trung Quốc", SGKuGouAsk),
-            make(SGImportedLRCKey, @"Imported LRC", @"Tệp .lrc do bạn nhập", SGImportedLRCAsk),
+            make(SGImportedLRCKey, @"LRC đã nhập", @"Tệp .lrc do bạn nhập", SGImportedLRCAsk),
             make(@"genius", @"Genius", @"Lời không đồng bộ, chỉ dùng khi nguồn khác không có", SGGeniusAsk),
         ];
     });
@@ -718,9 +718,9 @@ UIViewController *SGLyricsSourcesPage(void) {
         [all addObject:[SGSource sourceWithKey:provider.key name:provider.name detail:detail]];
     }
     NSString *note = SGFlag(SGKeyLyricsPreferWordTiming, NO)
-        ? @"Asked top to bottom until one has word timing. Sources get only the track, never your account."
-        : @"Asked top to bottom until one has timed lyrics. Sources get only the track, never your account.";
-    return SGSourcesPageMake(@"Lyrics sources", note,
+        ? @"Tìm lần lượt đến khi có lời đồng bộ từng từ. Nguồn chỉ nhận dữ liệu bài hát, không nhận tài khoản."
+        : @"Tìm lần lượt đến khi có lời đồng bộ. Nguồn chỉ nhận dữ liệu bài hát, không nhận tài khoản.";
+    return SGSourcesPageMake(@"Nguồn lời bài hát", note,
                              all, ^NSArray<NSString *> * { return SGLyricsOrder(); }, ^(NSArray<NSString *> *keys) { SGLyricsSetOrder(keys); });
 }
 

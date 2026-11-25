@@ -1,10 +1,31 @@
 // Yanbi Now Playing overlay: a non-key, touch-through window in Spotify's scene.
-// On an iPhone with a notch the capsule sits BELOW the protected status area.
+// A black, top-aligned app overlay on notch devices; not the actual hardware notch.
 // On Dynamic Island devices ActivityKit owns the hardware island; do not draw over it.
 // The overlay is rendered in app screenshots but cannot cover SpringBoard or other apps.
 #import <UIKit/UIKit.h>
 #import <MediaPlayer/MediaPlayer.h>
 #import <QuartzCore/QuartzCore.h>
+#import <sys/utsname.h>
+
+// Model classification only. Width is an artistic approximation of the supplied screenshot,
+// not a private hardware cutout measurement (UIKit exposes no cutout rectangle).
+static NSInteger SGYanbiCutoutKind(CGFloat top) {
+    static NSString *model;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ struct utsname u; if (uname(&u) == 0) model = [NSString stringWithUTF8String:u.machine]; });
+    static NSSet<NSString *> *wide, *narrow, *flat;
+    static dispatch_once_t profiles;
+    dispatch_once(&profiles, ^{
+        wide = [NSSet setWithArray:@[@"iPhone10,3",@"iPhone10,6",@"iPhone11,2",@"iPhone11,4",@"iPhone11,6",@"iPhone11,8",@"iPhone12,1",@"iPhone12,3",@"iPhone12,5",@"iPhone13,1",@"iPhone13,2",@"iPhone13,3",@"iPhone13,4"]];
+        narrow = [NSSet setWithArray:@[@"iPhone14,2",@"iPhone14,3",@"iPhone14,4",@"iPhone14,5",@"iPhone14,7",@"iPhone14,8",@"iPhone17,5"]];
+        flat = [NSSet setWithArray:@[@"iPhone10,1",@"iPhone10,2",@"iPhone10,4",@"iPhone10,5",@"iPhone12,8",@"iPhone14,6"]];
+    });
+    if ([wide containsObject:model ?: @""]) return 1;
+    if ([narrow containsObject:model ?: @""]) return 2;
+    if ([flat containsObject:model ?: @""]) return 0;
+    // Unknown models: keep the system island or hide rather than assume physical geometry.
+    return top >= 54 ? 3 : top >= 38 ? 2 : 0;
+}
 #import "Core/SGCore.h"
 #import "Shared/Player/PlayerState.h"
 #import "YanbiMiniIsland.h"
@@ -20,6 +41,9 @@
 @property (nonatomic, strong) CAGradientLayer *gradient;
 @property (nonatomic, copy) NSString *lastArtworkID;
 @property (nonatomic) BOOL active;
+@property (nonatomic, strong) UIImage *portrait;
+@property (nonatomic) BOOL playing;
+@property (nonatomic) BOOL stateKnown;
 + (instancetype)shared;
 - (void)start;
 - (void)refresh;
@@ -157,7 +181,8 @@
     [pill addSubview:art];
     self.artwork = art;
     NSString *portrait = [NSBundle.mainBundle pathForResource:@"yanbi-avatar" ofType:@"jpg"];
-    if (portrait.length) art.image = [UIImage imageWithContentsOfFile:portrait];
+    if (portrait.length) self.portrait = [UIImage imageWithContentsOfFile:portrait];
+    art.image = self.portrait;
     if (!art.image) art.image = [UIImage systemImageNamed:@"music.note"];
 
     UILabel *eyebrow = [UILabel new];
@@ -187,6 +212,8 @@
     symbol.contentMode = UIViewContentModeCenter;
     [pill addSubview:symbol];
     self.stateIcon = symbol;
+    self.lastArtworkID = nil;
+    self.stateKnown = NO;
     self.window = window;
 }
 
@@ -197,52 +224,70 @@
     CGFloat h = CGRectGetHeight(root.bounds);
     CGFloat top = MAX(root.safeAreaInsets.top, self.window.safeAreaInsets.top);
     BOOL portrait = scene && UIInterfaceOrientationIsPortrait(scene.interfaceOrientation);
-    // Dynamic Island iPhones have a taller safe area. Prefer native ActivityKit on them.
-    BOOL systemIsland = top >= 54;
-    BOOL notch = top >= 35 && top < 54;
-    BOOL show = notch && portrait && w >= 320 && h >= 550 && SGFlag(SGKeyYanbiMiniIsland, YES);
+    // Read insets from the main app window as well; the overlay may initially report zero.
+    for (UIWindow *candidate in scene.windows) {
+        if (candidate != self.window && candidate.isKeyWindow) {
+            top = MAX(top, candidate.safeAreaInsets.top);
+            break;
+        }
+    }
+    NSInteger kind = SGYanbiCutoutKind(top);
+    BOOL show = (kind == 1 || kind == 2) && top >= 38 && top < 54 && portrait && w >= 320 && h >= 550 && SGFlag(SGKeyYanbiMiniIsland, YES);
     self.capsule.hidden = !show;
     if (!show) return;
-    CGFloat width = MIN(w - 44, 296);
-    CGFloat height = 57;
-    // Just BELOW the camera/status-bar reserved area: this never draws over system privacy indicators.
-    CGFloat y = top + 3;
-    self.capsule.frame = CGRectMake(round((w - width) / 2), y, width, height);
-    self.gradient.frame = self.capsule.bounds;
-    self.artwork.frame = CGRectMake(9, 10, 37, 37);
-    CGFloat x = 54;
-    CGFloat textWidth = MAX(40, width - x - 39);
-    self.eyebrow.frame = CGRectMake(x, 6, textWidth, 13);
-    self.title.frame = CGRectMake(x, 19, textWidth, 21);
-    self.artist.frame = CGRectMake(x, 39, textWidth, 13);
-    self.stateIcon.frame = CGRectMake(width - 35, 17, 27, 24);
-    (void)systemIsland;
+    CGFloat pixel = MAX(1.0, scene.screen.scale);
+    CGFloat width = floor(MIN(w * (kind == 1 ? 0.55 : 0.46), w - 164) * pixel) / pixel;
+    CGFloat height = MIN(32, top - 5);
+    // Black app-rendered silhouette, flush with the top edge as in the reference.
+    // Side status indicators remain under system control. Exact hardware shape is not exposed.
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    self.capsule.frame = CGRectMake(round((w - width) * pixel / 2) / pixel, 0, width, height);
+    self.capsule.backgroundColor = UIColor.blackColor;
+    self.capsule.layer.cornerRadius = MIN(19, height * 0.6);
+    self.capsule.layer.maskedCorners = kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
+    self.capsule.layer.borderWidth = 0;
+    self.capsule.layer.shadowOpacity = 0;
+    self.gradient.hidden = YES;
+    self.artwork.frame = CGRectMake(12, 4, 24, 24);
+    self.artwork.layer.cornerRadius = 12;
+    self.eyebrow.frame = CGRectMake(42, 2, MAX(20, width - 70), 12);
+    self.title.frame = CGRectMake(42, 13, MAX(20, width - 70), 16);
+    self.title.font = [UIFont systemFontOfSize:10 weight:UIFontWeightSemibold];
+    self.artist.hidden = YES;
+    self.stateIcon.frame = CGRectMake(width - 25, 6, 18, 20);
+    [CATransaction commit];
 }
 
 - (void)updateMusic:(SPTPlayerState *)state {
     NSString *song = state.track.trackTitle;
-    BOOL playing = song.length && !state.isPaused;
+    BOOL playing = song.length && state.isPlaying && !state.isPaused;
+    BOOL changed = !self.stateKnown || self.playing != playing;
+    self.stateKnown = YES;
+    self.playing = playing;
     NSString *artist = state.track.artistName;
-    self.eyebrow.text = playing ? @"developer yanbi · đang phát" :
-                        song.length ? @"developer yanbi · tạm dừng" : @"developer yanbi · Spotify";
+    self.eyebrow.text = @"developer yanbi";
     self.title.text = song.length ? song : @"Sẵn sàng phát nhạc";
     self.artist.text = artist.length ? artist : @"Mở nhạc để bắt đầu";
     UIImageSymbolConfiguration *style = [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIImageSymbolWeightBold];
     self.stateIcon.image = [UIImage systemImageNamed:playing ? @"waveform" : song.length ? @"pause.fill" : @"music.note"
                                   withConfiguration:style];
 
+    if (changed && !UIAccessibilityIsReduceMotionEnabled()) {
+        CATransition *fade = [CATransition animation];
+        fade.type = kCATransitionFade; fade.duration = 0.18;
+        [self.stateIcon.layer addAnimation:fade forKey:@"yanbi-state"];
+    }
     NSString *trackID = state.track.URI ? [state.track.URI description] : song;
     if ([self.lastArtworkID isEqualToString:trackID]) return;
     self.lastArtworkID = [trackID copy];
-    NSDictionary *info = MPNowPlayingInfoCenter.defaultCenter.nowPlayingInfo;
-    NSString *nowTitle = info[MPMediaItemPropertyTitle];
-    MPMediaItemArtwork *cover = [nowTitle isEqualToString:song] ? info[MPMediaItemPropertyArtwork] : nil;
-    UIImage *image = [cover isKindOfClass:MPMediaItemArtwork.class] ? [cover imageWithSize:CGSizeMake(64, 64)] : nil;
-    if (!image) {
-        NSString *portrait = [NSBundle.mainBundle pathForResource:@"yanbi-avatar" ofType:@"jpg"];
-        image = portrait.length ? [UIImage imageWithContentsOfFile:portrait] : nil;
+    // Preserve the developer portrait; never substitute a low-resolution album thumbnail.
+    self.artwork.image = self.portrait ?: [UIImage systemImageNamed:@"music.note"];
+    if (!UIAccessibilityIsReduceMotionEnabled()) {
+        CATransition *fade = [CATransition animation];
+        fade.type = kCATransitionFade; fade.duration = 0.2;
+        [self.title.layer addAnimation:fade forKey:@"yanbi-track"];
     }
-    self.artwork.image = image ?: [UIImage systemImageNamed:@"music.note"];
 }
 
 - (void)playerStateDidChange:(SPTPlayerState *)state {
