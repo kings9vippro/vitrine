@@ -8,6 +8,9 @@
 #import "SGGlassThumb.h"
 
 #define SGKeyLegacyGlass @"spotifyglass.redesign.legacyglass"
+#define SGKeyYanbiFastGlass @"spotifyglass.yanbi.fastGlass"
+// Lightweight app-drawn panes below iOS 26; preference is applied after restart.
+BOOL SGYanbiFastGlass(void);
 
 // Whether panes are SGLegacyGlassViews right now. The one place this is decided: callers ask it instead of
 // re-deriving the answer from the switch, @available and SGLegacyGlassAvailable().
