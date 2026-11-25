@@ -316,7 +316,7 @@ static void tick(void) API_AVAILABLE(ios(17.0)) {
     if (!SGFlag(SGKeyLiveActivityTranslation, NO)) translation = nil;
     NSInteger textSize = view == SGLiveActivityLyrics ? SGInt(SGKeyLiveActivityTextSize, SGLiveActivityTextMedium) : SGLiveActivityTextMedium;
     NSInteger alignment = SGInt(SGKeyLiveActivityAlignment, SGLiveActivityAlignCenter);
-    NSInteger withoutLyrics = SGInt(SGKeyLiveActivityWithoutLyrics, SGLiveActivityWithoutLyricsNote);
+    NSInteger withoutLyrics = SGInt(SGKeyLiveActivityWithoutLyrics, SGLiveActivityWithoutLyricsTrack);
     readArtwork(state, trackID);
     NSString *tint = sg_tint;
     // Artwork off: no cover anywhere, the Dynamic Island's note in its place; the color is still the cover's.
