@@ -27,7 +27,7 @@ static void resetAll(void) {
 
 static void confirmReset(void) {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Đặt lại toàn bộ cài đặt?"
-                                                                  message:@"Every switch goes off, flag overrides and the tab bar layout are cleared, and Spotify restarts as it came, with the mod doing nothing until asked. Spotify's own settings are untouched."
+                                                                  message:@"Tắt mọi tùy chọn Vitrine, xóa bố cục tab tùy chỉnh và khởi động lại Spotify. Cài đặt gốc của Spotify được giữ nguyên."
                                                            preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"Đặt lại và khởi động lại" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) { resetAll(); }]];
     [alert addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
@@ -37,7 +37,7 @@ static void confirmReset(void) {
 // Reset all leaves the Keychain alone, so a key outlives a reset; this takes every item Vitrine keeps there.
 static void confirmClearKeychain(void) {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Xóa dữ liệu Keychain?"
-                                                                  message:@"The Gemini, OpenAI-compatible and Anthropic API keys, the OpenAI-compatible server and the Spicy Lyrics key are removed from this iPhone. Settings stay as they are."
+                                                                  message:@"Xóa các khóa API và địa chỉ máy chủ AI đã lưu trên iPhone. Các cài đặt khác không thay đổi."
                                                            preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"Xóa Keychain" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         SGAIForgetKeys();
